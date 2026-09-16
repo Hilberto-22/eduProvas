@@ -1,0 +1,8 @@
+.env
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+work/
+outputs/
+*.log

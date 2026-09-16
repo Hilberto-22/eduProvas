@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/avaliacoes}
+    username: ${DB_USER:avaliacoes}
+    password: ${DB_PASSWORD}
+  jackson:
+    time-zone: UTC
+server:
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+app:
+  jwt-secret: ${JWT_SECRET}
+  origin: ${APP_ORIGIN:http://localhost:4200}
+  admin-email: ${ADMIN_EMAIL:admin@escola.local}
+  admin-password: ${ADMIN_PASSWORD}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
