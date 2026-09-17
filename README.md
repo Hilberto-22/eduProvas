@@ -23,7 +23,7 @@ O banco usa volume persistente e não expõe portas. Para parar sem apagar dados
 
 1. ADMIN: em **Usuários**, cadastre um PROFESSOR.
 2. Entre como PROFESSOR. Em **Turmas e alunos**, crie uma turma e cadastre/matricule alunos. Para matricular um cadastro existente, use seu ID.
-3. Em **Avaliações**, crie uma avaliação e adicione questões. Objetivas têm um único gabarito; discursivas têm pontuação e correção manual.
+3. Em **Avaliações**, crie uma avaliação e adicione questões. Objetivas aceitam de duas a cinco alternativas e têm um único gabarito; discursivas têm pontuação e correção manual.
 4. Em **Aplicações**, escolha avaliação/turma, período, duração e política de ocorrências. Crie e publique. A criação da aplicação congela as questões da avaliação.
 5. Em outro perfil de navegador, entre como ALUNO matriculado e use o código. A entrada inicia a tentativa; reentradas recuperam a mesma tentativa.
 6. O aluno responde em tela cheia, aguarda a confirmação do autosave e entrega. O professor acompanha e corrige em **Acompanhamento**. O aluno reabre/atualiza o resultado para ver a nota.
@@ -98,7 +98,10 @@ Backup: use `pg_dump` no serviço `db` e mantenha cópia externa do dump e dos s
 
 ## Organização e limites operacionais
 
-- `api/`: endpoints e validação; `security/`: JWT e senhas BCrypt; `service/`: regras e persistência Spring JDBC; `realtime/`: notificações privadas do professor.
+- `controller/`: contratos HTTP, sem regras de negócio ou SQL.
+- `service/`: interfaces dos casos de uso; `service/impl/`: regras de negócio e transações.
+- `repository/`: persistência Spring JDBC e consultas SQL por domínio.
+- `api/dto/request/`: um DTO de entrada por responsabilidade; `api/`: tratamento global de erros; `security/`: JWT, BCrypt e inicialização do administrador; `realtime/`: notificações privadas do professor.
 - Flyway aplica as migrations na inicialização. As operações críticas usam transações e bloqueio da tentativa. O banco controla início/prazo, independentemente do relógio do aluno.
 - O servidor encerra tentativas expiradas a cada 5 segundos e também valida prazo em cada escrita. Autosave após o prazo é recusado. A nota objetiva é calculada no servidor; gabaritos não são enviados aos alunos.
 - Uma tentativa por aluno/aplicação. O código só funciona para matriculados. Respostas são imutáveis após entrega; notas discursivas podem ser corrigidas pelo professor.

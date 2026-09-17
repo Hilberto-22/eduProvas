@@ -12,6 +12,9 @@
         "serve": { "builder": "@angular/build:dev-server", "options": { "buildTarget": "avaliacoes:build" } }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }
 

@@ -104,6 +104,12 @@ class FlowIntegrationTest {
     }
     @Test void rejectsInvalidQuestionsAndGradesAndFreezesAssessment() {
         assertThat(request(teacher,"POST","/teacher/assessments/"+assessmentId+"/questions",Map.of("prompt","x","kind","OBJETIVA","points",1,"alternatives",List.of(Map.of("label","x","correct",false)))).getStatusCode().value()).isEqualTo(400);
+        var sixAlternatives = java.util.stream.IntStream.range(0, 6)
+                .mapToObj(index -> Map.of("label", "Opção " + index, "correct", index == 0)).toList();
+        assertThat(request(teacher,"POST","/teacher/assessments/"+assessmentId+"/questions",Map.of("prompt","Limite","kind","OBJETIVA","points",1,"alternatives",sixAlternatives)).getStatusCode().value()).isEqualTo(400);
+        var fiveAlternatives = java.util.stream.IntStream.range(0, 5)
+                .mapToObj(index -> Map.of("label", "Opção " + index, "correct", index == 0)).toList();
+        assertThat(request(teacher,"POST","/teacher/assessments/"+assessmentId+"/questions",Map.of("prompt","Cinco opções","kind","OBJETIVA","points",1,"alternatives",fiveAlternatives)).getStatusCode().is2xxSuccessful()).isTrue();
         Map a=join(session("REGISTRAR",3));
         assertThat(request(teacher,"POST","/teacher/assessments/"+assessmentId+"/questions",Map.of("prompt","x","kind","DISCURSIVA","points",1,"alternatives",List.of())).getStatusCode().value()).isEqualTo(409);
         ok(student,"POST","/student/attempts/"+a.get("id")+"/submit",Map.of());

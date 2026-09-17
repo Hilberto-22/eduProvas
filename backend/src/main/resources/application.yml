@@ -10,6 +10,7 @@ server:
   error:
     include-message: never
 app:
+  jwt-issuer: avaliacoes
   jwt-secret: ${JWT_SECRET}
   origin: ${APP_ORIGIN:http://localhost:4200}
   admin-email: ${ADMIN_EMAIL:admin@escola.local}

@@ -1,91 +1,326 @@
 <div class="login-shell" *ngIf="!api.user">
-  <section class="login-intro"><div class="brand">a<span>•</span> Avalia</div><p class="eyebrow">AVALIAÇÕES ESCOLARES</p><h1>Mais atenção<br>ao que importa:<br><em>aprender.</em></h1><p>Da primeira questão ao resultado, sua escola em um só lugar.</p><div class="intro-note">Crie · Aplique · Acompanhe</div></section>
-  <section class="login-form"><form (ngSubmit)="login()"><p class="eyebrow">BEM-VINDO</p><h2>Entre na sua escola</h2><p>Use as credenciais fornecidas pela administração.</p><label>E-mail<input type="email" name="email" [(ngModel)]="email" required autocomplete="username"></label><label>Senha<input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password"></label><p class="error" role="alert" *ngIf="error">{{error}}</p><button class="primary wide" [disabled]="busy">Entrar {{busy?'…':'→'}}</button></form></section>
+  <section class="login-intro"><div class="brand">a<span>•</span> Avalia</div><p
+      class="eyebrow">AVALIAÇÕES ESCOLARES</p><h1>Mais atenção<br>ao que
+      importa:<br><em>aprender.</em></h1><p>Da primeira questão ao resultado,
+      sua escola em um só lugar.</p><div class="intro-note">Crie · Aplique ·
+      Acompanhe</div></section>
+  <section class="login-form"><form (ngSubmit)="login()"><p
+        class="eyebrow">BEM-VINDO</p><h2>Entre na sua escola</h2><p>Use as
+        credenciais fornecidas pela administração.</p><label>E-mail<input
+          type="email" name="email" [(ngModel)]="email" required
+          autocomplete="username"></label><label>Senha<input type="password"
+          name="password" [(ngModel)]="password" required
+          autocomplete="current-password"></label><p class="error" role="alert"
+        *ngIf="error">{{error}}</p><button class="primary wide"
+        [disabled]="busy">Entrar {{busy?'…':'→'}}</button></form></section>
 </div>
 
 <div class="app-shell" *ngIf="api.user">
-  <aside *ngIf="!active"><div class="brand">a<span>•</span> Avalia</div><p class="eyebrow">ESPAÇO {{api.user.role}}</p>
+  <aside *ngIf="!active"><div class="brand">a<span>•</span> Avalia</div><p
+      class="eyebrow">ESPAÇO {{api.user.role}}</p>
     <nav *ngIf="api.user.role!=='ALUNO'">
-      <button [class.selected]="page==='overview'" (click)="page='overview'">Visão geral</button>
-      <button [class.selected]="page==='classes'" (click)="page='classes'">Turmas e alunos</button>
-      <button [class.selected]="page==='assessments'" (click)="page='assessments'">Avaliações</button>
-      <button [class.selected]="page==='sessions'" (click)="page='sessions'">Aplicações</button>
-      <button [class.selected]="page==='monitor'" (click)="page='monitor'">Acompanhamento</button>
-      <button *ngIf="api.user.role==='ADMIN'" [class.selected]="page==='users'" (click)="page='users'">Usuários</button>
+      <button [class.selected]="page==='overview'"
+        (click)="page='overview'">Visão geral</button>
+      <button [class.selected]="page==='classes'"
+        (click)="page='classes'">Turmas e alunos</button>
+      <button [class.selected]="page==='assessments'"
+        (click)="page='assessments'">Avaliações</button>
+      <button [class.selected]="page==='sessions'"
+        (click)="page='sessions'">Aplicações</button>
+      <button [class.selected]="page==='monitor'"
+        (click)="page='monitor'">Acompanhamento</button>
+      <button *ngIf="api.user.role==='ADMIN'" [class.selected]="page==='users'"
+        (click)="page='users'">Usuários</button>
     </nav>
-    <p class="sidebar-note">Um espaço para avaliar<br>e acompanhar a aprendizagem.</p>
-    <div class="profile"><strong>{{api.user.name}}</strong><small>{{api.user.role}}</small><button (click)="logout()">Sair da conta</button></div>
+    <p class="sidebar-note">Um espaço para avaliar<br>e acompanhar a
+      aprendizagem.</p>
+    <div
+      class="profile"><strong>{{api.user.name}}</strong><small>{{api.user.role}}</small><button
+        (click)="logout()">Sair da conta</button></div>
   </aside>
   <main [class.exam-main]="active">
-    <header><div><p class="eyebrow">{{active?'MODO PROVA':'PLATAFORMA DE AVALIAÇÕES'}}</p><h1>{{active?attempt.session.title:api.user.role==='ALUNO'?'Minhas avaliações':page==='classes'?'Turmas e alunos':page==='assessments'?'Avaliações':page==='sessions'?'Aplicações':page==='monitor'?'Acompanhamento':page==='users'?'Usuários':'Visão geral'}}</h1></div><span class="badge" *ngIf="api.user.role!=='ALUNO'">{{live?'● Ao vivo':'○ Reconectando'}}</span><div class="timer" *ngIf="active">{{timer}}<small>tempo restante</small></div></header>
-    <p *ngIf="error" class="error" role="alert">{{error}} <button (click)="error=''">Fechar</button></p>
+    <header><div><p
+          class="eyebrow">{{active?'MODO PROVA':'PLATAFORMA DE AVALIAÇÕES'}}</p><h1>{{active?attempt.session.title:api.user.role==='ALUNO'?'Minhas avaliações':page==='classes'?'Turmas e alunos':page==='assessments'?'Avaliações':page==='sessions'?'Aplicações':page==='monitor'?'Acompanhamento':page==='users'?'Usuários':'Visão geral'}}</h1></div><span
+        class="badge"
+        *ngIf="api.user.role!=='ALUNO'">{{live?'● Ao vivo':'○ Reconectando'}}</span><div
+        class="timer" *ngIf="active">{{timer}}<small>tempo
+          restante</small></div></header>
+    <p *ngIf="error" class="error" role="alert">{{error}} <button
+        (click)="error=''">Fechar</button></p>
     <p *ngIf="notice" class="notice" role="status">{{notice}}</p>
 
     <ng-container *ngIf="api.user.role!=='ALUNO'">
       <section *ngIf="page==='overview'">
-        <div class="welcome"><p class="eyebrow">SEU PRÓXIMO PASSO</p><h2>Prepare uma boa avaliação.</h2><p>Organize a turma, crie as questões e acompanhe cada entrega.</p><button class="primary" (click)="page='classes'">Começar pela turma →</button></div>
-        <div class="stats"><article><strong>{{classes.length}}</strong><span>Turmas</span></article><article><strong>{{assessments.length}}</strong><span>Avaliações</span></article><article><strong>{{sessions.length}}</strong><span>Aplicações</span></article></div>
-        <h2>Aplicações recentes</h2><div class="card" *ngIf="!sessions.length">Nenhuma aplicação ainda. Comece criando uma turma e uma avaliação.</div>
-        <article class="list-row" *ngFor="let s of sessions | slice:0:5"><div><strong>{{s.title}}</strong><small>{{s.class_name}} · {{s.starts_at | date:'dd/MM/yyyy HH:mm'}}</small></div><span class="badge">{{s.status}}</span><button (click)="monitor(s.id)">Acompanhar →</button></article>
+        <div class="welcome"><p class="eyebrow">SEU PRÓXIMO PASSO</p><h2>Prepare
+            uma boa avaliação.</h2><p>Organize a turma, crie as questões e
+            acompanhe cada entrega.</p><button class="primary"
+            (click)="page='classes'">Começar pela turma →</button></div>
+        <div
+          class="stats"><article><strong>{{classes.length}}</strong><span>Turmas</span></article><article><strong>{{assessments.length}}</strong><span>Avaliações</span></article><article><strong>{{sessions.length}}</strong><span>Aplicações</span></article></div>
+        <h2>Aplicações recentes</h2><div class="card"
+          *ngIf="!sessions.length">Nenhuma aplicação ainda. Comece criando uma
+          turma e uma avaliação.</div>
+        <article class="list-row"
+          *ngFor="let s of sessions | slice:0:5"><div><strong>{{s.title}}</strong><small>{{s.class_name}}
+              · {{s.starts_at | date:'dd/MM/yyyy HH:mm'}}</small></div><span
+            class="badge">{{s.status}}</span><button
+            (click)="monitor(s.id)">Acompanhar →</button></article>
       </section>
 
       <section *ngIf="page==='classes'">
-        <form class="card inline" (ngSubmit)="createClass()"><label>Nome da turma<input name="className" [(ngModel)]="className" placeholder="Ex.: 2º ano • Turma A" required maxlength="120"></label><button class="primary" [disabled]="busy">Criar turma</button></form>
-        <div class="card"><label>Selecione uma turma<select [(ngModel)]="classId" (ngModelChange)="run(selectClass.bind(this))"><option value="">Selecione…</option><option *ngFor="let c of classes" [value]="c.id">{{c.name}} ({{c.students}} alunos)</option></select></label>
-          <ng-container *ngIf="classId"><h2>Alunos matriculados</h2><p *ngIf="!students.length">Nenhum aluno matriculado.</p><div class="list-row" *ngFor="let s of students"><div><strong>{{s.name}}</strong><small>{{s.email}}</small><small>ID: {{s.id}}</small></div></div>
-          <h3>Cadastrar e matricular aluno</h3><ng-container *ngTemplateOutlet="userForm;context:{$implicit:false}"></ng-container>
-          <form class="inline" (ngSubmit)="enroll()"><label>ID de um aluno já cadastrado<input name="enrollment" [(ngModel)]="enrollmentId" required placeholder="UUID do cadastro"></label><button [disabled]="busy">Matricular</button></form></ng-container>
+        <form class="card inline" (ngSubmit)="createClass()"><label>Nome da
+            turma<input name="className" [(ngModel)]="className"
+              placeholder="Ex.: 2º ano • Turma A" required
+              maxlength="120"></label><button class="primary"
+            [disabled]="busy">Criar turma</button></form>
+        <div class="card"><label>Selecione uma turma<select
+              [(ngModel)]="classId"
+              (ngModelChange)="run(selectClass.bind(this))"><option
+                value>Selecione…</option><option *ngFor="let c of classes"
+                [value]="c.id">{{c.name}} ({{c.students}}
+                alunos)</option></select></label>
+          <ng-container *ngIf="classId"><h2>Alunos matriculados</h2><p
+              *ngIf="!students.length">Nenhum aluno matriculado.</p><div
+              class="list-row"
+              *ngFor="let s of students"><div><strong>{{s.name}}</strong><small>{{s.email}}</small><small>ID:
+                  {{s.id}}</small></div></div>
+            <h3>Cadastrar e matricular aluno</h3><ng-container
+              *ngTemplateOutlet="userForm;context:{$implicit:false}"></ng-container>
+            <form class="inline" (ngSubmit)="enroll()"><label>ID de um aluno já
+                cadastrado<input name="enrollment" [(ngModel)]="enrollmentId"
+                  required placeholder="UUID do cadastro"></label><button
+                [disabled]="busy">Matricular</button></form></ng-container>
         </div>
       </section>
 
       <section *ngIf="page==='assessments'">
-        <form class="card inline" (ngSubmit)="createAssessment()"><label>Título da avaliação<input name="title" [(ngModel)]="title" required maxlength="200" placeholder="Ex.: Matemática • Funções"></label><button class="primary" [disabled]="busy">Criar avaliação</button></form>
-        <div class="card"><label>Avaliação<select [(ngModel)]="assessmentId" (ngModelChange)="run(selectAssessment.bind(this))"><option value="">Selecione…</option><option *ngFor="let a of assessments" [value]="a.id">{{a.title}}</option></select></label>
-          <ng-container *ngIf="selectedAssessment"><p class="notice" *ngIf="selectedAssessment.locked">Questões congeladas: esta avaliação já possui uma aplicação.</p>
-          <article class="question-preview" *ngFor="let q of questions"><span class="eyebrow">QUESTÃO {{q.position}} · {{q.points}} PONTO(S) · {{q.kind}}</span><p class="pre">{{q.prompt}}</p><p *ngFor="let alt of q.alternatives">{{alt.correct?'✓':'○'}} {{alt.label}}</p></article>
-          <form *ngIf="!selectedAssessment.locked" (ngSubmit)="addQuestion()"><h3>Adicionar questão</h3><div class="grid2"><label>Tipo<select name="kind" [(ngModel)]="question.kind"><option>OBJETIVA</option><option>DISCURSIVA</option></select></label><label>Pontuação<input type="number" name="points" [(ngModel)]="question.points" min="0.01" max="1000" step=".01" required></label></div><label>Enunciado<textarea name="prompt" [(ngModel)]="question.prompt" required maxlength="10000"></textarea></label>
-          <fieldset *ngIf="question.kind==='OBJETIVA'"><legend>Alternativas — marque o gabarito</legend><div class="alternative-editor" *ngFor="let option of options;let i=index;trackBy:trackIndex"><input type="radio" name="correct" [value]="i" [(ngModel)]="correct" [attr.aria-label]="'Gabarito alternativa '+(i+1)"><input [name]="'option'+i" [(ngModel)]="options[i]" required maxlength="2000" [attr.aria-label]="'Texto alternativa '+(i+1)"></div></fieldset><button class="primary" [disabled]="busy">Adicionar questão</button></form></ng-container>
+        <form class="card inline" (ngSubmit)="createAssessment()"><label>Título
+            da avaliação<input name="title" [(ngModel)]="title" required
+              maxlength="200"
+              placeholder="Ex.: Matemática • Funções"></label><button
+            class="primary" [disabled]="busy">Criar avaliação</button></form>
+        <div class="card"><label>Avaliação<select [(ngModel)]="assessmentId"
+              (ngModelChange)="run(selectAssessment.bind(this))"><option
+                value>Selecione…</option><option *ngFor="let a of assessments"
+                [value]="a.id">{{a.title}}</option></select></label>
+          <ng-container *ngIf="selectedAssessment"><p class="notice"
+              *ngIf="selectedAssessment.locked">Questões congeladas: esta
+              avaliação já possui uma aplicação.</p>
+            <article class="question-preview" *ngFor="let q of questions"><span
+                class="eyebrow">QUESTÃO {{q.position}} · {{q.points}} PONTO(S) ·
+                {{q.kind}}</span><p class="pre">{{q.prompt}}</p><p
+                *ngFor="let alt of q.alternatives">{{alt.correct?'✓':'○'}}
+                {{alt.label}}</p></article>
+            <form *ngIf="!selectedAssessment.locked"
+              (ngSubmit)="addQuestion()"><h3>Adicionar questão</h3><div
+                class="grid2"><label>Tipo<select name="kind"
+                    [(ngModel)]="question.kind"><option>OBJETIVA</option><option>DISCURSIVA</option></select></label><label>Pontuação<input
+                    type="number" name="points" [(ngModel)]="question.points"
+                    min="0.01" max="1000" step=".01"
+                    required></label></div><label>Enunciado<textarea
+                  name="prompt" [(ngModel)]="question.prompt" required
+                  maxlength="10000"></textarea></label>
+              <fieldset *ngIf="question.kind==='OBJETIVA'"><legend>Alternativas
+                  — informe de 2 a 5 e marque o gabarito</legend><div class="alternative-editor"
+                  *ngFor="let option of options;let i=index;trackBy:trackIndex"><input
+                    type="radio" name="correct" [value]="i"
+                    [(ngModel)]="correct"
+                    [attr.aria-label]="'Gabarito alternativa '+(i+1)"><input
+                    [name]="'option'+i" [(ngModel)]="options[i]" required
+                    maxlength="2000"
+                    [attr.aria-label]="'Texto alternativa '+(i+1)"><button
+                    type="button" *ngIf="options.length>2" (click)="removeOption(i)"
+                    [attr.aria-label]="'Remover alternativa '+(i+1)">Remover</button></div>
+                <button type="button" (click)="addOption()" [disabled]="options.length>=5">
+                  Adicionar alternativa ({{options.length}}/5)
+                </button></fieldset><button
+                class="primary" [disabled]="busy">Adicionar
+                questão</button></form></ng-container>
         </div>
       </section>
 
       <section *ngIf="page==='sessions'">
-        <form class="card" (ngSubmit)="createSession()"><h2>Nova aplicação</h2><div class="grid2"><label>Avaliação<select name="assessment" [(ngModel)]="sessionForm.assessmentId" required><option value="">Selecione…</option><option *ngFor="let a of assessments" [value]="a.id">{{a.title}}</option></select></label><label>Turma<select name="class" [(ngModel)]="sessionForm.classId" required><option value="">Selecione…</option><option *ngFor="let c of classes" [value]="c.id">{{c.name}}</option></select></label>
-        <label>Início (seu horário local)<input type="datetime-local" name="start" [(ngModel)]="sessionForm.startsAt" required></label><label>Fim (seu horário local)<input type="datetime-local" name="end" [(ngModel)]="sessionForm.endsAt" required></label>
-        <label>Duração em minutos<input type="number" name="duration" [(ngModel)]="sessionForm.durationMinutes" min="1" max="480" required></label><label>Limite de ocorrências<input type="number" name="violations" [(ngModel)]="sessionForm.maxViolations" min="1" max="100" required></label>
-        <label>Ao atingir o limite<select name="action" [(ngModel)]="sessionForm.violationAction"><option value="REGISTRAR">Apenas registrar</option><option value="FINALIZAR">Finalizar automaticamente</option></select></label></div>
-        <p class="muted">A duração começa na entrada do aluno e nunca ultrapassa o fim da aplicação. Criar a aplicação congela suas questões.</p><button class="primary" [disabled]="busy">Criar aplicação</button></form>
-        <article class="card" *ngFor="let s of sessions"><div class="list-row"><div><h3>{{s.title}}</h3><p>{{s.class_name}} · {{s.duration_minutes}} min</p></div><span class="badge">{{s.status}}</span></div><p>{{s.starts_at | date:'dd/MM/yyyy HH:mm'}} até {{s.ends_at | date:'dd/MM/yyyy HH:mm'}}</p><p>Código de acesso: <strong class="access-code">{{s.code}}</strong></p><p class="muted">Limite: {{s.max_violations}} · {{s.violation_action}}</p><button class="primary" *ngIf="s.status==='RASCUNHO'" (click)="publish(s.id)" [disabled]="busy">Publicar aplicação</button> <button (click)="monitor(s.id)">Acompanhar</button></article>
+        <form class="card" (ngSubmit)="createSession()"><h2>Nova
+            aplicação</h2><div class="grid2"><label>Avaliação<select
+                name="assessment" [(ngModel)]="sessionForm.assessmentId"
+                required><option value>Selecione…</option><option
+                  *ngFor="let a of assessments"
+                  [value]="a.id">{{a.title}}</option></select></label><label>Turma<select
+                name="class" [(ngModel)]="sessionForm.classId" required><option
+                  value>Selecione…</option><option *ngFor="let c of classes"
+                  [value]="c.id">{{c.name}}</option></select></label>
+            <label>Início (seu horário local)<input type="datetime-local"
+                name="start" [(ngModel)]="sessionForm.startsAt"
+                required></label><label>Fim (seu horário local)<input
+                type="datetime-local" name="end"
+                [(ngModel)]="sessionForm.endsAt" required></label>
+            <label>Duração em minutos<input type="number" name="duration"
+                [(ngModel)]="sessionForm.durationMinutes" min="1" max="480"
+                required></label><label>Limite de ocorrências<input
+                type="number" name="violations"
+                [(ngModel)]="sessionForm.maxViolations" min="1" max="100"
+                required></label>
+            <label>Ao atingir o limite<select name="action"
+                [(ngModel)]="sessionForm.violationAction"><option
+                  value="REGISTRAR">Apenas registrar</option><option
+                  value="FINALIZAR">Finalizar
+                  automaticamente</option></select></label></div>
+          <p class="muted">A duração começa na entrada do aluno e nunca
+            ultrapassa o fim da aplicação. Criar a aplicação congela suas
+            questões.</p><button class="primary" [disabled]="busy">Criar
+            aplicação</button></form>
+        <article class="card" *ngFor="let s of sessions"><div
+            class="list-row"><div><h3>{{s.title}}</h3><p>{{s.class_name}} ·
+                {{s.duration_minutes}} min</p></div><span
+              class="badge">{{s.status}}</span></div><p>{{s.starts_at |
+            date:'dd/MM/yyyy HH:mm'}} até {{s.ends_at |
+            date:'dd/MM/yyyy HH:mm'}}</p><p>Código de acesso: <strong
+              class="access-code">{{s.code}}</strong></p><p
+            class="muted">Limite: {{s.max_violations}} ·
+            {{s.violation_action}}</p><button class="primary"
+            *ngIf="s.status==='RASCUNHO'" (click)="publish(s.id)"
+            [disabled]="busy">Publicar aplicação</button> <button
+            (click)="monitor(s.id)">Acompanhar</button></article>
       </section>
 
       <section *ngIf="page==='monitor'">
-        <div class="card"><label>Aplicação<select [(ngModel)]="monitorId" (ngModelChange)="run(refreshMonitor.bind(this))"><option value="">Selecione…</option><option *ngFor="let s of sessions" [value]="s.id">{{s.title}} • {{s.class_name}}</option></select></label><p class="muted">Atualização ao vivo, com consulta de segurança a cada 15 segundos. Eventos próximos são agrupados em um episódio de 2 segundos.</p>
-        <div class="table-wrap"><table><thead><tr><th>Aluno</th><th>Estado</th><th>Respostas</th><th>Eventos</th><th>Último contato</th><th></th></tr></thead><tbody><tr *ngFor="let r of roster"><td>{{r.name}}</td><td><span class="badge">{{r.status||'NÃO INICIOU'}}</span><small>{{r.finish_reason}}</small></td><td>{{r.answered}}</td><td>{{r.violations}}</td><td>{{r.last_seen | date:'HH:mm:ss'}}</td><td><button *ngIf="r.id" (click)="openReview(r.id)">Ver / corrigir</button></td></tr></tbody></table></div></div>
-        <div *ngIf="review" class="card"><div class="list-row"><h2>Respostas e correção</h2><button (click)="review=null">Fechar</button></div><p>{{review.status}} · Nota: {{review.score.total}} / {{review.max_score}} · {{review.score.pending}} pendente(s)</p>
-          <article class="question-preview" *ngFor="let q of review.questions"><h3>{{q.position}}. {{q.prompt}}</h3><p *ngIf="q.kind==='DISCURSIVA'" class="pre">{{reviewAnswer(q.id)?.text_value||'Sem resposta'}}</p><p *ngFor="let alt of q.alternatives">{{reviewAnswer(q.id)?.alternative_id===alt.id?'●':'○'}} {{alt.label}} {{alt.correct?'✓ Gabarito':''}}</p>
-          <form *ngIf="q.kind==='DISCURSIVA' && review.status==='FINALIZADA'" (ngSubmit)="grade(q.id)"><div class="grid2"><label>Nota (0 a {{q.points}})<input type="number" [name]="'score'+q.id" [(ngModel)]="grades[q.id].score" min="0" [max]="q.points" step=".01" required></label><label>Comentário<input [name]="'feedback'+q.id" [(ngModel)]="grades[q.id].feedback" maxlength="5000"></label></div><button [disabled]="busy">Salvar correção</button></form></article>
-          <h3>Ocorrências</h3><p *ngIf="!review.occurrences.length">Nenhuma ocorrência.</p><p *ngFor="let o of review.occurrences">{{o.created_at | date:'dd/MM HH:mm:ss'}} · {{o.kind}} {{o.counted?'':'(mesmo episódio)'}}</p>
+        <div class="card"><label>Aplicação<select [(ngModel)]="monitorId"
+              (ngModelChange)="run(refreshMonitor.bind(this))"><option
+                value>Selecione…</option><option *ngFor="let s of sessions"
+                [value]="s.id">{{s.title}} •
+                {{s.class_name}}</option></select></label><p
+            class="muted">Atualização ao vivo, com consulta de segurança a cada
+            15 segundos. Eventos próximos são agrupados em um episódio de 2
+            segundos.</p>
+          <div
+            class="table-wrap"><table><thead><tr><th>Aluno</th><th>Estado</th><th>Respostas</th><th>Eventos</th><th>Último
+                    contato</th><th></th></tr></thead><tbody><tr
+                  *ngFor="let r of roster"><td>{{r.name}}</td><td><span
+                      class="badge">{{r.status||'NÃO INICIOU'}}</span><small>{{r.finish_reason}}</small></td><td>{{r.answered}}</td><td>{{r.violations}}</td><td>{{r.last_seen
+                    | date:'HH:mm:ss'}}</td><td><button *ngIf="r.id"
+                      (click)="openReview(r.id)">Ver /
+                      corrigir</button></td></tr></tbody></table></div></div>
+        <div *ngIf="review" class="card"><div class="list-row"><h2>Respostas e
+              correção</h2><button
+              (click)="review=null">Fechar</button></div><p>{{review.status}} ·
+            Nota: {{review.score.total}} / {{review.max_score}} ·
+            {{review.score.pending}} pendente(s)</p>
+          <article class="question-preview"
+            *ngFor="let q of review.questions"><h3>{{q.position}}.
+              {{q.prompt}}</h3><p *ngIf="q.kind==='DISCURSIVA'"
+              class="pre">{{reviewAnswer(q.id)?.text_value||'Sem resposta'}}</p><p
+              *ngFor="let alt of q.alternatives">{{reviewAnswer(q.id)?.alternative_id===alt.id?'●':'○'}}
+              {{alt.label}} {{alt.correct?'✓ Gabarito':''}}</p>
+            <form *ngIf="q.kind==='DISCURSIVA' && review.status==='FINALIZADA'"
+              (ngSubmit)="grade(q.id)"><div class="grid2"><label>Nota (0 a
+                  {{q.points}})<input type="number" [name]="'score'+q.id"
+                    [(ngModel)]="grades[q.id].score" min="0" [max]="q.points"
+                    step=".01" required></label><label>Comentário<input
+                    [name]="'feedback'+q.id" [(ngModel)]="grades[q.id].feedback"
+                    maxlength="5000"></label></div><button
+                [disabled]="busy">Salvar correção</button></form></article>
+          <h3>Ocorrências</h3><p *ngIf="!review.occurrences.length">Nenhuma
+            ocorrência.</p><p
+            *ngFor="let o of review.occurrences">{{o.created_at |
+            date:'dd/MM HH:mm:ss'}} · {{o.kind}}
+            {{o.counted?'':'(mesmo episódio)'}}</p>
         </div>
       </section>
 
-      <section class="card" *ngIf="page==='users' && api.user.role==='ADMIN'"><h2>Cadastrar usuário</h2><ng-container *ngTemplateOutlet="userForm;context:{$implicit:true}"></ng-container><h3>Usuários cadastrados</h3><article class="list-row" *ngFor="let u of users"><div><strong>{{u.name}}</strong><small>{{u.email}}</small><small>ID: {{u.id}}</small></div><span class="badge">{{u.role}}</span></article></section>
-      <ng-template #userForm let-admin><form (ngSubmit)="createUser(admin)"><div class="grid2"><label>Nome<input name="name" [(ngModel)]="newUser.name" required maxlength="120"></label><label>E-mail<input name="email" type="email" [(ngModel)]="newUser.email" required maxlength="254"></label><label>Senha inicial (12 a 72 caracteres)<input name="password" type="password" [(ngModel)]="newUser.password" required minlength="12" maxlength="72" autocomplete="new-password"></label><label *ngIf="admin">Perfil<select name="role" [(ngModel)]="newUser.role"><option>ALUNO</option><option>PROFESSOR</option><option>ADMIN</option></select></label></div><button class="primary" [disabled]="busy">Cadastrar {{admin?'usuário':'aluno'}}</button></form></ng-template>
+      <section class="card"
+        *ngIf="page==='users' && api.user.role==='ADMIN'"><h2>Cadastrar
+          usuário</h2><ng-container
+          *ngTemplateOutlet="userForm;context:{$implicit:true}"></ng-container><h3>Usuários
+          cadastrados</h3><article class="list-row"
+          *ngFor="let u of users"><div><strong>{{u.name}}</strong><small>{{u.email}}</small><small>ID:
+              {{u.id}}</small></div><span
+            class="badge">{{u.role}}</span></article></section>
+      <ng-template #userForm let-admin><form (ngSubmit)="createUser(admin)"><div
+            class="grid2"><label>Nome<input name="name"
+                [(ngModel)]="newUser.name" required
+                maxlength="120"></label><label>E-mail<input name="email"
+                type="email" [(ngModel)]="newUser.email" required
+                maxlength="254"></label><label>Senha inicial (12 a 72
+              caracteres)<input name="password" type="password"
+                [(ngModel)]="newUser.password" required minlength="12"
+                maxlength="72" autocomplete="new-password"></label><label
+              *ngIf="admin">Perfil<select name="role"
+                [(ngModel)]="newUser.role"><option>ALUNO</option><option>PROFESSOR</option><option>ADMIN</option></select></label></div><button
+            class="primary" [disabled]="busy">Cadastrar
+            {{admin?'usuário':'aluno'}}</button></form></ng-template>
     </ng-container>
 
     <ng-container *ngIf="api.user.role==='ALUNO'">
-      <ng-container *ngIf="!attempt"><form class="card join-card" (ngSubmit)="join()"><p class="eyebrow">PRONTO PARA COMEÇAR?</p><h2>Entre na avaliação</h2><label>Código da aplicação<input class="code-input" name="code" [(ngModel)]="code" required maxlength="16" placeholder="Código do professor"></label><p>Ao entrar, o cronômetro começa e a tela cheia é solicitada. Perda de foco, aba oculta e saída da tela cheia geram ocorrências. O navegador não impede o acesso a outros programas.</p><p>Use um computador com suporte a tela cheia. Em caso de desconexão, o prazo continua correndo. Alterações pendentes ficam nesta aba e precisam chegar ao servidor antes do prazo.</p><button class="primary" [disabled]="busy">Entrar em tela cheia e iniciar →</button></form>
-      <h2>Minhas tentativas</h2><p class="card" *ngIf="!history.length">Suas avaliações aparecerão aqui.</p><article class="list-row" *ngFor="let h of history"><div><strong>{{h.title}}</strong><small>{{h.status}}</small></div><button (click)="run(openAttempt.bind(this,h.id))">Abrir</button></article></ng-container>
+      <ng-container *ngIf="!attempt"><form class="card join-card"
+          (ngSubmit)="join()"><p class="eyebrow">PRONTO PARA
+            COMEÇAR?</p><h2>Entre na avaliação</h2><label>Código da
+            aplicação<input class="code-input" name="code" [(ngModel)]="code"
+              required maxlength="16"
+              placeholder="Código do professor"></label><p>Ao entrar, o
+            cronômetro começa e a tela cheia é solicitada. Perda de foco, aba
+            oculta e saída da tela cheia geram ocorrências. O navegador não
+            impede o acesso a outros programas.</p><p>Use um computador com
+            suporte a tela cheia. Em caso de desconexão, o prazo continua
+            correndo. Alterações pendentes ficam nesta aba e precisam chegar ao
+            servidor antes do prazo.</p><button class="primary"
+            [disabled]="busy">Entrar em tela cheia e iniciar →</button></form>
+        <h2>Minhas tentativas</h2><p class="card" *ngIf="!history.length">Suas
+          avaliações aparecerão aqui.</p><article class="list-row"
+          *ngFor="let h of history"><div><strong>{{h.title}}</strong><small>{{h.status}}</small></div><button
+            (click)="run(openAttempt.bind(this,h.id))">Abrir</button></article></ng-container>
 
       <ng-container *ngIf="active">
-        <div class="exam-status"><span>{{answered}} / {{attempt.questions.length}} respondidas</span><span aria-live="polite">{{saveState}}</span><span>{{attempt.violations}} / {{attempt.session.max_violations}} ocorrências</span></div>
-        <div class="notice">Política desta prova: {{attempt.session.violation_action==='FINALIZAR'?'finalização automática ao atingir o limite de ocorrências.':'ocorrências registradas para análise do professor.'}}</div>
-        <section class="card fullscreen-gate" *ngIf="!fullscreen"><h2>Retome o modo prova</h2><p>Entre em tela cheia para continuar. O cronômetro permanece ativo.</p><button class="primary" (click)="run(enterFullscreen.bind(this))">Voltar à tela cheia</button></section>
-        <ng-container *ngIf="fullscreen"><article class="card exam-question" *ngFor="let q of attempt.questions"><p class="eyebrow">QUESTÃO {{q.position}} · {{q.points}} PONTO(S)</p><h2 class="pre">{{q.prompt}}</h2><ng-container *ngIf="q.kind==='OBJETIVA'"><label class="choice" *ngFor="let alt of q.alternatives" [class.chosen]="answers[q.id]?.alternativeId===alt.id"><input type="radio" [name]="q.id" [value]="alt.id" [ngModel]="answers[q.id]?.alternativeId" (ngModelChange)="change(q,$event)"><span>{{alt.label}}</span></label></ng-container><label *ngIf="q.kind==='DISCURSIVA'">Sua resposta<textarea [ngModel]="answers[q.id]?.text||''" (ngModelChange)="change(q,$event)" maxlength="20000" rows="6"></textarea></label></article>
-        <div class="card" *ngIf="confirmSubmit"><h2>Entregar a avaliação?</h2><p>{{answered}} de {{attempt.questions.length}} questões respondidas. Após a entrega, as respostas não poderão ser alteradas.</p><button class="primary" (click)="submit()" [disabled]="busy||flushing">Confirmar entrega</button> <button (click)="confirmSubmit=false">Continuar respondendo</button></div><button *ngIf="!confirmSubmit" class="primary" (click)="confirmSubmit=true">Finalizar avaliação →</button></ng-container>
+        <div class="exam-status"><span>{{answered}} /
+            {{attempt.questions.length}} respondidas</span><span
+            aria-live="polite">{{saveState}}</span><span>{{attempt.violations}}
+            / {{attempt.session.max_violations}} ocorrências</span></div>
+        <div class="notice">Política desta prova:
+          {{attempt.session.violation_action==='FINALIZAR'?'finalização automática ao atingir o limite de ocorrências.':'ocorrências registradas para análise do professor.'}}</div>
+        <section class="card fullscreen-gate" *ngIf="!fullscreen"><h2>Retome o
+            modo prova</h2><p>Entre em tela cheia para continuar. O cronômetro
+            permanece ativo.</p><button class="primary"
+            (click)="run(enterFullscreen.bind(this))">Voltar à tela
+            cheia</button></section>
+        <ng-container *ngIf="fullscreen"><article class="card exam-question"
+            *ngFor="let q of attempt.questions"><p class="eyebrow">QUESTÃO
+              {{q.position}} · {{q.points}} PONTO(S)</p><h2
+              class="pre">{{q.prompt}}</h2><ng-container
+              *ngIf="q.kind==='OBJETIVA'"><label class="choice"
+                *ngFor="let alt of q.alternatives"
+                [class.chosen]="answers[q.id]?.alternativeId===alt.id"><input
+                  type="radio" [name]="q.id" [value]="alt.id"
+                  [ngModel]="answers[q.id]?.alternativeId"
+                  (ngModelChange)="change(q,$event)"><span>{{alt.label}}</span></label></ng-container><label
+              *ngIf="q.kind==='DISCURSIVA'">Sua resposta<textarea
+                [ngModel]="answers[q.id]?.text||''"
+                (ngModelChange)="change(q,$event)" maxlength="20000"
+                rows="6"></textarea></label></article>
+          <div class="card" *ngIf="confirmSubmit"><h2>Entregar a
+              avaliação?</h2><p>{{answered}} de {{attempt.questions.length}}
+              questões respondidas. Após a entrega, as respostas não poderão ser
+              alteradas.</p><button class="primary" (click)="submit()"
+              [disabled]="busy||flushing">Confirmar entrega</button> <button
+              (click)="confirmSubmit=false">Continuar
+              respondendo</button></div><button *ngIf="!confirmSubmit"
+            class="primary" (click)="confirmSubmit=true">Finalizar avaliação
+            →</button></ng-container>
       </ng-container>
 
-      <section class="card" *ngIf="attempt && !active"><p class="eyebrow">AVALIAÇÃO ENTREGUE</p><h2>{{attempt.session.title}}</h2><p>Encerramento: {{attempt.finish_reason}}</p><div class="result-score">{{attempt.score.total}} <span>/ {{attempt.max_score}}</span></div><p>{{attempt.score.pending>0?'Nota parcial — aguardando correção de '+attempt.score.pending+' questão(ões).':'Correção concluída.'}}</p><article class="question-preview" *ngFor="let a of attempt.answers;let i=index"><h3>Questão {{i+1}}</h3><p>{{a.text_value}}</p><p>Nota: {{a.score===null?'Aguardando correção':a.score}}</p><p *ngIf="a.feedback">{{a.feedback}}</p></article><button (click)="run(openAttempt.bind(this,attempt.id))">Atualizar resultado</button> <button class="primary" (click)="run(backToHistory.bind(this))">Voltar</button></section>
+      <section class="card" *ngIf="attempt && !active"><p
+          class="eyebrow">AVALIAÇÃO
+          ENTREGUE</p><h2>{{attempt.session.title}}</h2><p>Encerramento:
+          {{attempt.finish_reason}}</p><div
+          class="result-score">{{attempt.score.total}} <span>/
+            {{attempt.max_score}}</span></div><p>{{attempt.score.pending>0?'Nota parcial — aguardando correção de '+attempt.score.pending+' questão(ões).':'Correção concluída.'}}</p><article
+          class="question-preview"
+          *ngFor="let a of attempt.answers;let i=index"><h3>Questão
+            {{i+1}}</h3><p>{{a.text_value}}</p><p>Nota:
+            {{a.score===null?'Aguardando correção':a.score}}</p><p
+            *ngIf="a.feedback">{{a.feedback}}</p></article><button
+          (click)="run(openAttempt.bind(this,attempt.id))">Atualizar
+          resultado</button> <button class="primary"
+          (click)="run(backToHistory.bind(this))">Voltar</button></section>
     </ng-container>
     <footer>Avalia · Ambiente de avaliações escolares</footer>
   </main>
 </div>
-

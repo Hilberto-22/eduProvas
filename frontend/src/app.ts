@@ -13,7 +13,7 @@ export class AppComponent implements OnInit,OnDestroy {
   classes:any[]=[]; assessments:any[]=[]; sessions:any[]=[]; users:any[]=[]; students:any[]=[];
   className=''; title=''; classId=''; assessmentId=''; questions:any[]=[]; selectedAssessment:any=null;
   newUser={name:'',email:'',password:'',role:'ALUNO'}; enrollmentId='';
-  question={prompt:'',kind:'OBJETIVA',points:1}; options=['','','','']; correct=0;
+  question={prompt:'',kind:'OBJETIVA',points:1}; options=['','']; correct=0;
   sessionForm={assessmentId:'',classId:'',startsAt:'',endsAt:'',durationMinutes:60,maxViolations:3,violationAction:'REGISTRAR'};
   monitorId=''; roster:any[]=[]; review:any=null; grades:Record<string,any>={}; live=false;
   code=''; history:any[]=[]; attempt:any=null; answers:Record<string,any>={};
@@ -87,8 +87,17 @@ export class AppComponent implements OnInit,OnDestroy {
     await this.api.call('/teacher/assessments/'+this.assessmentId+'/questions','POST',{
       ...this.question, alternatives:this.question.kind==='OBJETIVA'?this.options.map((label,i)=>({label,correct:i===Number(this.correct)})):[]
     });
-    this.question={prompt:'',kind:'OBJETIVA',points:1};this.options=['','','',''];this.correct=0;await this.selectAssessment();
+    this.question={prompt:'',kind:'OBJETIVA',points:1};this.options=['',''];this.correct=0;await this.selectAssessment();
   }); }
+  addOption() {
+    if(this.options.length<5) this.options.push('');
+  }
+  removeOption(index:number) {
+    if(this.options.length<=2) return;
+    this.options.splice(index,1);
+    if(this.correct===index) this.correct=0;
+    else if(this.correct>index) this.correct--;
+  }
   async createSession() { await this.run(async()=>{
     await this.api.call('/teacher/sessions','POST',{...this.sessionForm,startsAt:new Date(this.sessionForm.startsAt).toISOString(),endsAt:new Date(this.sessionForm.endsAt).toISOString()});
     await this.reloadTeacher();this.notice='Aplicação criada. Publique para liberar o código aos alunos.';

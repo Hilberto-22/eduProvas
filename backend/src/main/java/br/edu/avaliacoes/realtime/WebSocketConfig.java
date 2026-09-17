@@ -17,23 +17,44 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtDecoder decoder;
     private final JwtAuthenticationConverter converter;
     private final String origin;
-    public WebSocketConfig(JwtDecoder decoder,JwtAuthenticationConverter converter,@Value("${app.origin}") String origin) { this.decoder=decoder; this.converter=converter; this.origin=origin; }
-    public void registerStompEndpoints(StompEndpointRegistry registry) { registry.addEndpoint("/ws").setAllowedOrigins(origin); }
-    public void configureMessageBroker(MessageBrokerRegistry registry) { registry.enableSimpleBroker("/queue"); registry.setUserDestinationPrefix("/user"); }
+
+    public WebSocketConfig(JwtDecoder decoder, JwtAuthenticationConverter converter, @Value("${app.origin}") String origin) {
+        this.decoder = decoder;
+        this.converter = converter;
+        this.origin = origin;
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").setAllowedOrigins(origin);
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/queue");
+        registry.setUserDestinationPrefix("/user");
+    }
+
+    @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
-            public Message<?> preSend(Message<?> message,MessageChannel channel) {
-                var h=MessageHeaderAccessor.getAccessor(message,StompHeaderAccessor.class);
-                if(h==null || h.getCommand()==null) return message;
-                if(h.getCommand()==StompCommand.CONNECT) {
-                    String token=h.getFirstNativeHeader("Authorization");
-                    if(token==null || !token.startsWith("Bearer ")) throw new AccessDeniedException("Token obrigatório");
-                    var jwt=decoder.decode(token.substring(7));
-                    if(!java.util.List.of("ADMIN","PROFESSOR").contains(jwt.getClaimAsString("role"))) throw new AccessDeniedException("Perfil inválido");
+            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                
+                var h = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                if (h == null || h.getCommand() == null) return message;
+                
+                if (StompCommand.CONNECT.equals(h.getCommand())) {
+                    String token = h.getFirstNativeHeader("Authorization");
+                    if (token == null || !token.startsWith("Bearer "))
+                        throw new AccessDeniedException("Token obrigatório");
+                    var jwt = decoder.decode(token.substring(7));
+                    if (!java.util.List.of("ADMIN", "PROFESSOR").contains(jwt.getClaimAsString("role")))
+                        throw new AccessDeniedException("Perfil inválido");
                     h.setUser(converter.convert(jwt));
-                } else if(h.getCommand()==StompCommand.SUBSCRIBE) {
-                    if(h.getUser()==null || !"/user/queue/monitor".equals(h.getDestination())) throw new AccessDeniedException("Assinatura não permitida");
-                } else if(h.getCommand()==StompCommand.SEND) throw new AccessDeniedException("Use a API");
+                } else if (StompCommand.SUBSCRIBE.equals(h.getCommand())) {
+                    if (h.getUser() == null || !"/user/queue/monitor".equals(h.getDestination()))
+                        throw new AccessDeniedException("Assinatura não permitida");
+                } else if (StompCommand.SEND.equals(h.getCommand())) throw new AccessDeniedException("Use a API");
                 return message;
             }
         });
