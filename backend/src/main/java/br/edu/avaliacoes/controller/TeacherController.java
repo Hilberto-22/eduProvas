@@ -1,5 +1,10 @@
 package br.edu.avaliacoes.controller;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
+import br.edu.avaliacoes.api.domain.dto.response.Responses;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.util.UUID;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -42,24 +47,24 @@ public class TeacherController {
     }
 
     @GetMapping("/classes")
-    public Object classes(@AuthenticationPrincipal Jwt jwt) {
-        return classService.findByTeacher(userId(jwt));
+    public PageResponse<Responses.SchoolClass> classes(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return classService.findByTeacher(userId(jwt), new PageRequest(page, size)).map(row -> Responses.from(row, Responses.SchoolClass.class));
     }
 
     @PostMapping("/classes")
-    public Object createClass(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateClassRequest input) {
-        return classService.create(userId(jwt), input);
+    public Responses.Id createClass(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateClassRequest input) {
+        return Responses.from(classService.create(userId(jwt), input), Responses.Id.class);
     }
 
     @GetMapping("/classes/{classId}/students")
-    public Object students(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID classId) {
-        return classService.findStudents(classId, userId(jwt));
+    public PageResponse<Responses.Student> students(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID classId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return classService.findStudents(classId, userId(jwt), new PageRequest(page, size)).map(row -> Responses.from(row, Responses.Student.class));
     }
 
     @PostMapping("/classes/{classId}/students")
-    public Object createStudent(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID classId,
+    public Responses.Id createStudent(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID classId,
                                 @Valid @RequestBody CreateUserRequest input) {
-        return classService.createStudent(classId, userId(jwt), input);
+        return Responses.from(classService.createStudent(classId, userId(jwt), input), Responses.Id.class);
     }
 
     @PostMapping("/classes/{classId}/enrollments")
@@ -69,36 +74,36 @@ public class TeacherController {
     }
 
     @GetMapping("/assessments")
-    public Object assessments(@AuthenticationPrincipal Jwt jwt) {
-        return assessmentService.findByTeacher(userId(jwt));
+    public PageResponse<Responses.Assessment> assessments(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return assessmentService.findByTeacher(userId(jwt), new PageRequest(page, size)).map(row -> Responses.from(row, Responses.Assessment.class));
     }
 
     @PostMapping("/assessments")
-    public Object createAssessment(@AuthenticationPrincipal Jwt jwt,
+    public Responses.Id createAssessment(@AuthenticationPrincipal Jwt jwt,
                                    @Valid @RequestBody CreateAssessmentRequest input) {
-        return assessmentService.create(userId(jwt), input);
+        return Responses.from(assessmentService.create(userId(jwt), input), Responses.Id.class);
     }
 
     @GetMapping("/assessments/{assessmentId}/questions")
-    public Object questions(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID assessmentId) {
-        return assessmentService.findQuestions(assessmentId, userId(jwt));
+    public java.util.List<Responses.Question> questions(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID assessmentId) {
+        return Responses.list(assessmentService.findQuestions(assessmentId, userId(jwt)), Responses.Question.class);
     }
 
     @PostMapping("/assessments/{assessmentId}/questions")
-    public Object addQuestion(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID assessmentId,
+    public Responses.Id addQuestion(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID assessmentId,
                               @Valid @RequestBody CreateQuestionRequest input) {
-        return assessmentService.addQuestion(assessmentId, userId(jwt), input);
+        return Responses.from(assessmentService.addQuestion(assessmentId, userId(jwt), input), Responses.Id.class);
     }
 
     @GetMapping("/sessions")
-    public Object sessions(@AuthenticationPrincipal Jwt jwt) {
-        return sessionService.findByTeacher(userId(jwt));
+    public PageResponse<Responses.Session> sessions(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return sessionService.findByTeacher(userId(jwt), new PageRequest(page, size)).map(row -> Responses.from(row, Responses.Session.class));
     }
 
     @PostMapping("/sessions")
-    public Object createSession(@AuthenticationPrincipal Jwt jwt,
+    public Responses.CreatedSession createSession(@AuthenticationPrincipal Jwt jwt,
                                 @Valid @RequestBody CreateExamSessionRequest input) {
-        return sessionService.create(userId(jwt), input);
+        return Responses.from(sessionService.create(userId(jwt), input), Responses.CreatedSession.class);
     }
 
     @PostMapping("/sessions/{sessionId}/publish")
@@ -107,13 +112,13 @@ public class TeacherController {
     }
 
     @GetMapping("/sessions/{sessionId}/monitor")
-    public Object monitor(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sessionId) {
-        return sessionService.monitor(sessionId, userId(jwt));
+    public PageResponse<Responses.Monitor> monitor(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sessionId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return sessionService.monitor(sessionId, userId(jwt), new PageRequest(page, size)).map(row -> Responses.from(row, Responses.Monitor.class));
     }
 
     @GetMapping("/attempts/{attemptId}")
-    public Object review(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID attemptId) {
-        return attemptService.review(attemptId, userId(jwt));
+    public Responses.Attempt review(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID attemptId) {
+        return Responses.from(attemptService.review(attemptId, userId(jwt)), Responses.Attempt.class);
     }
 
     @PutMapping("/attempts/{attemptId}/grades/{questionId}")

@@ -40,7 +40,7 @@
   </aside>
   <main [class.exam-main]="active">
     <header><div><p
-          class="eyebrow">{{active?'MODO PROVA':'PLATAFORMA DE AVALIAÇÕES'}}</p><h1>{{active?attempt.session.title:api.user.role==='ALUNO'?'Minhas avaliações':page==='classes'?'Turmas e alunos':page==='assessments'?'Avaliações':page==='sessions'?'Aplicações':page==='monitor'?'Acompanhamento':page==='users'?'Usuários':'Visão geral'}}</h1></div><span
+          class="eyebrow">{{active?'MODO PROVA':'PLATAFORMA DE AVALIAÇÕES'}}</p><h1>{{active?attempt?.session?.title:api.user.role==='ALUNO'?'Minhas avaliações':page==='classes'?'Turmas e alunos':page==='assessments'?'Avaliações':page==='sessions'?'Aplicações':page==='monitor'?'Acompanhamento':page==='users'?'Usuários':'Visão geral'}}</h1></div><span
         class="badge"
         *ngIf="api.user.role!=='ALUNO'">{{live?'● Ao vivo':'○ Reconectando'}}</span><div
         class="timer" *ngIf="active">{{timer}}<small>tempo
@@ -56,12 +56,12 @@
             acompanhe cada entrega.</p><button class="primary"
             (click)="page='classes'">Começar pela turma →</button></div>
         <div
-          class="stats"><article><strong>{{classes.length}}</strong><span>Turmas</span></article><article><strong>{{assessments.length}}</strong><span>Avaliações</span></article><article><strong>{{sessions.length}}</strong><span>Aplicações</span></article></div>
+          class="stats"><article><strong>{{lists.classes.total}}</strong><span>Turmas</span></article><article><strong>{{lists.assessments.total}}</strong><span>Avaliações</span></article><article><strong>{{lists.sessions.total}}</strong><span>Aplicações</span></article></div>
         <h2>Aplicações recentes</h2><div class="card"
-          *ngIf="!sessions.length">Nenhuma aplicação ainda. Comece criando uma
+          *ngIf="!recentSessions.length">Nenhuma aplicação ainda. Comece criando uma
           turma e uma avaliação.</div>
         <article class="list-row"
-          *ngFor="let s of sessions | slice:0:5"><div><strong>{{s.title}}</strong><small>{{s.class_name}}
+          *ngFor="let s of recentSessions"><div><strong>{{s.title}}</strong><small>{{s.class_name}}
               · {{s.starts_at | date:'dd/MM/yyyy HH:mm'}}</small></div><span
             class="badge">{{s.status}}</span><button
             (click)="monitor(s.id)">Acompanhar →</button></article>
@@ -76,14 +76,15 @@
         <div class="card"><label>Selecione uma turma<select
               [(ngModel)]="classId"
               (ngModelChange)="run(selectClass.bind(this))"><option
-                value>Selecione…</option><option *ngFor="let c of classes"
+                value>Selecione…</option><option *ngFor="let c of classOptions()"
                 [value]="c.id">{{c.name}} ({{c.students}}
-                alunos)</option></select></label>
+                alunos)</option></select></label><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'classes'}"></ng-container>
           <ng-container *ngIf="classId"><h2>Alunos matriculados</h2><p
               *ngIf="!students.length">Nenhum aluno matriculado.</p><div
               class="list-row"
               *ngFor="let s of students"><div><strong>{{s.name}}</strong><small>{{s.email}}</small><small>ID:
                   {{s.id}}</small></div></div>
+<ng-container *ngTemplateOutlet="pagination;context:{$implicit:'students'}"></ng-container>
             <h3>Cadastrar e matricular aluno</h3><ng-container
               *ngTemplateOutlet="userForm;context:{$implicit:false}"></ng-container>
             <form class="inline" (ngSubmit)="enroll()"><label>ID de um aluno já
@@ -101,8 +102,8 @@
             class="primary" [disabled]="busy">Criar avaliação</button></form>
         <div class="card"><label>Avaliação<select [(ngModel)]="assessmentId"
               (ngModelChange)="run(selectAssessment.bind(this))"><option
-                value>Selecione…</option><option *ngFor="let a of assessments"
-                [value]="a.id">{{a.title}}</option></select></label>
+                value>Selecione…</option><option *ngFor="let a of assessmentOptions()"
+                [value]="a.id">{{a.title}}</option></select></label><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'assessments'}"></ng-container>
           <ng-container *ngIf="selectedAssessment"><p class="notice"
               *ngIf="selectedAssessment.locked">Questões congeladas: esta
               avaliação já possui uma aplicação.</p>
@@ -144,11 +145,11 @@
             aplicação</h2><div class="grid2"><label>Avaliação<select
                 name="assessment" [(ngModel)]="sessionForm.assessmentId"
                 required><option value>Selecione…</option><option
-                  *ngFor="let a of assessments"
-                  [value]="a.id">{{a.title}}</option></select></label><label>Turma<select
+                  *ngFor="let a of assessmentOptions()"
+                  [value]="a.id">{{a.title}}</option></select></label><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'assessments'}"></ng-container><label>Turma<select
                 name="class" [(ngModel)]="sessionForm.classId" required><option
-                  value>Selecione…</option><option *ngFor="let c of classes"
-                  [value]="c.id">{{c.name}}</option></select></label>
+                  value>Selecione…</option><option *ngFor="let c of classOptions()"
+                  [value]="c.id">{{c.name}}</option></select></label><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'classes'}"></ng-container>
             <label>Início (seu horário local)<input type="datetime-local"
                 name="start" [(ngModel)]="sessionForm.startsAt"
                 required></label><label>Fim (seu horário local)<input
@@ -180,15 +181,15 @@
             {{s.violation_action}}</p><button class="primary"
             *ngIf="s.status==='RASCUNHO'" (click)="publish(s.id)"
             [disabled]="busy">Publicar aplicação</button> <button
-            (click)="monitor(s.id)">Acompanhar</button></article>
+            (click)="monitor(s.id)">Acompanhar</button></article><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'sessions'}"></ng-container>
       </section>
 
       <section *ngIf="page==='monitor'">
         <div class="card"><label>Aplicação<select [(ngModel)]="monitorId"
-              (ngModelChange)="run(refreshMonitor.bind(this))"><option
-                value>Selecione…</option><option *ngFor="let s of sessions"
+              (ngModelChange)="run(selectMonitor.bind(this))"><option
+                value>Selecione…</option><option *ngFor="let s of sessionOptions()"
                 [value]="s.id">{{s.title}} •
-                {{s.class_name}}</option></select></label><p
+                {{s.class_name}}</option></select></label><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'sessions'}"></ng-container><p
             class="muted">Atualização ao vivo, com consulta de segurança a cada
             15 segundos. Eventos próximos são agrupados em um episódio de 2
             segundos.</p>
@@ -199,7 +200,7 @@
                       class="badge">{{r.status||'NÃO INICIOU'}}</span><small>{{r.finish_reason}}</small></td><td>{{r.answered}}</td><td>{{r.violations}}</td><td>{{r.last_seen
                     | date:'HH:mm:ss'}}</td><td><button *ngIf="r.id"
                       (click)="openReview(r.id)">Ver /
-                      corrigir</button></td></tr></tbody></table></div></div>
+                      corrigir</button></td></tr></tbody></table></div><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'roster'}"></ng-container></div>
         <div *ngIf="review" class="card"><div class="list-row"><h2>Respostas e
               correção</h2><button
               (click)="review=null">Fechar</button></div><p>{{review.status}} ·
@@ -234,7 +235,7 @@
           cadastrados</h3><article class="list-row"
           *ngFor="let u of users"><div><strong>{{u.name}}</strong><small>{{u.email}}</small><small>ID:
               {{u.id}}</small></div><span
-            class="badge">{{u.role}}</span></article></section>
+            class="badge">{{u.role}}</span></article><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'users'}"></ng-container></section>
       <ng-template #userForm let-admin><form (ngSubmit)="createUser(admin)"><div
             class="grid2"><label>Nome<input name="name"
                 [(ngModel)]="newUser.name" required
@@ -267,9 +268,9 @@
         <h2>Minhas tentativas</h2><p class="card" *ngIf="!history.length">Suas
           avaliações aparecerão aqui.</p><article class="list-row"
           *ngFor="let h of history"><div><strong>{{h.title}}</strong><small>{{h.status}}</small></div><button
-            (click)="run(openAttempt.bind(this,h.id))">Abrir</button></article></ng-container>
+            (click)="run(openAttempt.bind(this,h.id))">Abrir</button></article><ng-container *ngTemplateOutlet="pagination;context:{$implicit:'history'}"></ng-container></ng-container>
 
-      <ng-container *ngIf="active">
+      <ng-container *ngIf="active && attempt">
         <div class="exam-status"><span>{{answered}} /
             {{attempt.questions.length}} respondidas</span><span
             aria-live="polite">{{saveState}}</span><span>{{attempt.violations}}
@@ -321,6 +322,13 @@
           resultado</button> <button class="primary"
           (click)="run(backToHistory.bind(this))">Voltar</button></section>
     </ng-container>
+    <ng-template #pagination let-key>
+      <div class="pagination" *ngIf="listInfo(key).total>listInfo(key).size" aria-label="Paginação">
+        <button type="button" [disabled]="busy || listInfo(key).page===0" (click)="changePage(key,-1)">Anterior</button>
+        <span aria-live="polite">Página {{listInfo(key).page+1}} de {{pageCount(key)}} · {{listInfo(key).total}} registros</span>
+        <button type="button" [disabled]="busy || (listInfo(key).page+1)*listInfo(key).size>=listInfo(key).total" (click)="changePage(key,1)">Próxima</button>
+      </div>
+    </ng-template>
     <footer>Avalia · Ambiente de avaliações escolares</footer>
   </main>
 </div>

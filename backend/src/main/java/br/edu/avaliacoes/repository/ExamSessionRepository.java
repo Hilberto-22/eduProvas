@@ -1,5 +1,7 @@
 package br.edu.avaliacoes.repository;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -21,23 +23,24 @@ public class ExamSessionRepository extends JdbcRepositorySupport {
                 "WHERE s.id=? AND a.teacher_id=?", sessionId, teacherId);
     }
 
-    public Map<String, Object> findByCodeForUpdate(String code) {
-        return one("SELECT * FROM exam_session WHERE code=? FOR UPDATE", code);
+    public Map<String, Object> findByCode(String code) {
+        return one("SELECT id,assessment_id,class_id,code,status,starts_at,ends_at,duration_minutes,max_violations,violation_action FROM exam_session WHERE code=?", code);
     }
 
     public Map<String, Object> findById(UUID sessionId) {
-        return one("SELECT * FROM exam_session WHERE id=?", sessionId);
+        return one("SELECT id,assessment_id,class_id,code,status,starts_at,ends_at,duration_minutes,max_violations,violation_action FROM exam_session WHERE id=?", sessionId);
     }
 
     public Map<String, Object> findWithAssessment(UUID sessionId) {
-        return one("SELECT s.*,a.title FROM exam_session s JOIN assessment a ON a.id=s.assessment_id WHERE s.id=?",
+        return one("SELECT s.id,s.assessment_id,s.class_id,s.code,s.status,s.starts_at,s.ends_at,s.duration_minutes,s.max_violations,s.violation_action,a.title FROM exam_session s JOIN assessment a ON a.id=s.assessment_id WHERE s.id=?",
                 sessionId);
     }
 
-    public List<Map<String, Object>> findByTeacher(UUID teacherId) {
-        return rows("SELECT s.*,a.title,c.name AS class_name FROM exam_session s " +
+    public PageResponse<Map<String, Object>> findByTeacher(UUID teacherId, PageRequest page) {
+        return page("SELECT s.id,s.assessment_id,s.class_id,s.code,s.status,s.starts_at,s.ends_at,s.duration_minutes,s.max_violations,s.violation_action,a.title,c.name AS class_name FROM exam_session s " +
                 "JOIN assessment a ON a.id=s.assessment_id JOIN school_class c ON c.id=s.class_id " +
-                "WHERE a.teacher_id=? ORDER BY s.starts_at DESC", teacherId);
+                "WHERE a.teacher_id=? ORDER BY s.starts_at DESC,s.id",
+                "SELECT count(*) FROM exam_session s JOIN assessment a ON a.id=s.assessment_id WHERE a.teacher_id=?", page, teacherId);
     }
 
     public void create(UUID id, String code, CreateExamSessionRequest input) {
@@ -51,15 +54,16 @@ public class ExamSessionRepository extends JdbcRepositorySupport {
         update("UPDATE exam_session SET status='PUBLICADA' WHERE id=?", sessionId);
     }
 
-    public List<Map<String, Object>> monitor(UUID sessionId) {
-        return rows("SELECT u.id AS student_id,u.name,t.id,t.status,t.deadline,t.last_seen,t.finish_reason," +
+    public PageResponse<Map<String, Object>> monitor(UUID sessionId, PageRequest page) {
+        return page("SELECT u.id AS student_id,u.name,t.id,t.status,t.deadline,t.last_seen,t.finish_reason," +
                 "(SELECT count(*) FROM occurrence o WHERE o.attempt_id=t.id AND o.counted) AS violations," +
                 "(SELECT count(*) FROM answer r WHERE r.attempt_id=t.id AND " +
                 "(r.alternative_id IS NOT NULL OR COALESCE(trim(r.text_value),'')<>'')) AS answered " +
-                "FROM enrollment e JOIN app_user u ON u.id=e.student_id " +
-                "LEFT JOIN attempt t ON t.student_id=u.id AND t.session_id=? " +
-                "WHERE e.class_id=(SELECT class_id FROM exam_session WHERE id=?) ORDER BY u.name",
-                sessionId, sessionId);
+                "FROM exam_session s JOIN enrollment e ON e.class_id=s.class_id JOIN app_user u ON u.id=e.student_id " +
+                "LEFT JOIN attempt t ON t.student_id=u.id AND t.session_id=s.id " +
+                "WHERE s.id=? ORDER BY u.name,u.id",
+                "SELECT count(*) FROM enrollment WHERE class_id=(SELECT class_id FROM exam_session WHERE id=?)",
+                page, sessionId);
     }
 
     public UUID findTeacherId(UUID sessionId) {

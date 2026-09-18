@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -14,12 +16,13 @@ public class UserRepository extends JdbcRepositorySupport {
         super(jdbc);
     }
 
-    public List<Map<String, Object>> findAll() {
-        return rows("SELECT id,name,email,role FROM app_user ORDER BY name");
+    public PageResponse<Map<String, Object>> findAll(PageRequest page) {
+        return page("SELECT id,name,email,role FROM app_user ORDER BY name,id",
+                "SELECT count(*) FROM app_user", page);
     }
 
     public Optional<Map<String, Object>> findByEmail(String email) {
-        return rows("SELECT * FROM app_user WHERE email=?", email).stream().findFirst();
+        return rows("SELECT id,name,email,password_hash,role FROM app_user WHERE email=?", email).stream().findFirst();
     }
 
     public void create(UUID id, String name, String email, String passwordHash, String role) {

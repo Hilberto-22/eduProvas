@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,13 +56,13 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     @Override
-    public List<Map<String, Object>> findByTeacher(UUID teacherId) {
-        return sessions.findByTeacher(teacherId);
+    public PageResponse<Map<String, Object>> findByTeacher(UUID teacherId, PageRequest page) {
+        return sessions.findByTeacher(teacherId, page);
     }
 
     @Override
-    public List<Map<String, Object>> monitor(UUID sessionId, UUID teacherId) {
+    public PageResponse<Map<String, Object>> monitor(UUID sessionId, UUID teacherId, PageRequest page) {
         sessions.requireOwned(sessionId, teacherId);
-        return sessions.monitor(sessionId);
+        return sessions.monitor(sessionId, page);
     }
 }

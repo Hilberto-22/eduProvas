@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,8 +31,8 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     }
 
     @Override
-    public List<Map<String, Object>> findByTeacher(UUID teacherId) {
-        return classes.findByTeacher(teacherId);
+    public PageResponse<Map<String, Object>> findByTeacher(UUID teacherId, PageRequest page) {
+        return classes.findByTeacher(teacherId, page);
     }
 
     @Override
@@ -41,9 +43,9 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     }
 
     @Override
-    public List<Map<String, Object>> findStudents(UUID classId, UUID teacherId) {
+    public PageResponse<Map<String, Object>> findStudents(UUID classId, UUID teacherId, PageRequest page) {
         classes.requireOwned(classId, teacherId);
-        return classes.findStudents(classId);
+        return classes.findStudents(classId, page);
     }
 
     @Override

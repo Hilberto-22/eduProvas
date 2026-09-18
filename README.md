@@ -69,6 +69,7 @@ Abra http://localhost:4200. O servidor Angular encaminha `/api` e `/ws` para o b
 ```sh
 cd frontend
 npm ci
+npm test
 npm run build
 ```
 
@@ -110,4 +111,10 @@ Backup: use `pg_dump` no serviço `db` e mantenha cópia externa do dump e dos s
 - JWT dura 8 horas. Se expirar, o aluno precisa autenticar-se novamente e retomar a tentativa dentro do prazo.
 - Acompanhamento via fila privada STOMP autenticada, com consulta HTTP de recuperação a cada 15 segundos. O broker em memória pressupõe **uma instância do backend**. Não escale horizontalmente sem adaptar o broker.
 - MVP sem recuperação de senha por e-mail, importação em lote, anexos, edição/remoção de questões já salvas ou publicação automática na internet. Credenciais iniciais são entregues pela escola.
+
+As listagens usam paginação (`page`, `size`, padrão 25, máximo 100) e retornam
+`{items, page, size, total}`. Durante a prova, o frontend consulta um endpoint
+leve de estado; questões e alternativas são carregadas em lote. O acompanhamento
+agrupa notificações da aplicação selecionada. Detalhes dos contratos, bloqueios,
+índices e resultados de `EXPLAIN ANALYZE`: [consultas e validação](docs/consultas.md).
 

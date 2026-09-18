@@ -1,0 +1,160 @@
+﻿BEGIN
+INSERT 0 1000
+INSERT 0 50000
+INSERT 0 50000
+INSERT 0 50000
+INSERT 0 1000
+INSERT 0 50000
+ANALYZE
+WITH_V4_CLASSES
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.41..126.94 rows=25 width=52) (actual time=0.130..0.221 rows=25 loops=1)
+   Buffers: shared hit=53
+   ->  Index Only Scan using school_class_teacher_name_idx on school_class c  (cost=0.41..248.40 rows=49 width=52) (actual time=0.129..0.219 rows=25 loops=1)
+         Index Cond: (teacher_id = 'd6a37d34-c90f-8fe3-907a-733272cbd87c'::uuid)
+         Heap Fetches: 25
+         Buffers: shared hit=53
+         SubPlan 1
+           ->  Aggregate  (cost=1.11..1.12 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=25)
+                 Buffers: shared hit=25
+                 ->  Seq Scan on enrollment e  (cost=0.00..1.11 rows=1 width=0) (actual time=0.001..0.001 rows=0 loops=25)
+                       Filter: (class_id = c.id)
+                       Rows Removed by Filter: 9
+                       Buffers: shared hit=25
+ Planning:
+   Buffers: shared hit=56
+ Planning Time: 2.837 ms
+ Execution Time: 0.259 ms
+(17 rows)
+
+WITH_V4_ASSESSMENTS
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.41..306.53 rows=25 width=50) (actual time=0.116..0.203 rows=25 loops=1)
+   Buffers: shared hit=103
+   ->  Index Only Scan using assessment_teacher_title_idx on assessment a  (cost=0.41..612.65 rows=50 width=50) (actual time=0.115..0.200 rows=25 loops=1)
+         Index Cond: (teacher_id = 'd6a37d34-c90f-8fe3-907a-733272cbd87c'::uuid)
+         Heap Fetches: 25
+         Buffers: shared hit=103
+         SubPlan 1
+           ->  Index Only Scan using exam_session_assessment_idx on exam_session s  (cost=0.29..8.31 rows=1 width=0) (actual time=0.004..0.004 rows=1 loops=25)
+                 Index Cond: (assessment_id = a.id)
+                 Heap Fetches: 25
+                 Buffers: shared hit=75
+ Planning:
+   Buffers: shared hit=56
+ Planning Time: 4.599 ms
+ Execution Time: 0.227 ms
+(15 rows)
+
+WITH_V4_HISTORY
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.99..308.08 rows=25 width=60) (actual time=0.030..0.179 rows=25 loops=1)
+   Buffers: shared hit=178
+   ->  Nested Loop  (cost=0.99..615.17 rows=50 width=60) (actual time=0.029..0.176 rows=25 loops=1)
+         Buffers: shared hit=178
+         ->  Nested Loop  (cost=0.70..596.66 rows=50 width=59) (actual time=0.020..0.106 rows=25 loops=1)
+               Buffers: shared hit=103
+               ->  Index Scan using attempt_student_started_idx on attempt t  (cost=0.41..201.29 rows=50 width=59) (actual time=0.014..0.033 rows=25 loops=1)
+                     Index Cond: (student_id = '87267ff2-76a7-f62c-4599-08a6b7d7ffe6'::uuid)
+                     Buffers: shared hit=28
+               ->  Index Scan using exam_session_pkey on exam_session s  (cost=0.29..7.91 rows=1 width=32) (actual time=0.003..0.003 rows=1 loops=25)
+                     Index Cond: (id = t.session_id)
+                     Buffers: shared hit=75
+         ->  Index Scan using assessment_pkey on assessment a  (cost=0.29..0.37 rows=1 width=33) (actual time=0.003..0.003 rows=1 loops=25)
+               Index Cond: (id = s.assessment_id)
+               Buffers: shared hit=75
+ Planning:
+   Buffers: shared hit=114
+ Planning Time: 2.934 ms
+ Execution Time: 0.201 ms
+(19 rows)
+
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+WITHOUT_V4_CLASSES
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1094.53..1122.96 rows=25 width=52) (actual time=3.799..3.873 rows=25 loops=1)
+   Buffers: shared hit=493
+   ->  Result  (cost=1094.53..1150.26 rows=49 width=52) (actual time=3.798..3.870 rows=25 loops=1)
+         Buffers: shared hit=493
+         ->  Sort  (cost=1094.53..1094.65 rows=49 width=44) (actual time=3.762..3.763 rows=25 loops=1)
+               Sort Key: c.name, c.id
+               Sort Method: quicksort  Memory: 28kB
+               Buffers: shared hit=468
+               ->  Seq Scan on school_class c  (cost=0.00..1093.15 rows=49 width=44) (actual time=0.009..3.735 rows=50 loops=1)
+                     Filter: (teacher_id = 'd6a37d34-c90f-8fe3-907a-733272cbd87c'::uuid)
+                     Rows Removed by Filter: 49962
+                     Buffers: shared hit=468
+         SubPlan 1
+           ->  Aggregate  (cost=1.11..1.12 rows=1 width=8) (actual time=0.003..0.004 rows=1 loops=25)
+                 Buffers: shared hit=25
+                 ->  Seq Scan on enrollment e  (cost=0.00..1.11 rows=1 width=0) (actual time=0.002..0.002 rows=0 loops=25)
+                       Filter: (class_id = c.id)
+                       Rows Removed by Filter: 9
+                       Buffers: shared hit=25
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.825 ms
+ Execution Time: 3.904 ms
+(23 rows)
+
+WITHOUT_V4_ASSESSMENTS
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1142.52..38345.96 rows=25 width=50) (actual time=15.383..15.399 rows=25 loops=1)
+   Buffers: shared hit=1379
+   ->  Result  (cost=1142.52..75549.40 rows=50 width=50) (actual time=15.382..15.395 rows=25 loops=1)
+         Buffers: shared hit=1379
+         ->  Sort  (cost=1142.52..1142.65 rows=50 width=49) (actual time=3.728..3.732 rows=25 loops=1)
+               Sort Key: a.title, a.id
+               Sort Method: quicksort  Memory: 31kB
+               Buffers: shared hit=516
+               ->  Seq Scan on assessment a  (cost=0.00..1141.11 rows=50 width=49) (actual time=0.010..3.711 rows=50 loops=1)
+                     Filter: (teacher_id = 'd6a37d34-c90f-8fe3-907a-733272cbd87c'::uuid)
+                     Rows Removed by Filter: 49959
+                     Buffers: shared hit=516
+         SubPlan 2
+           ->  Seq Scan on exam_session s  (cost=0.00..1363.10 rows=50010 width=16) (actual time=0.034..4.198 rows=50010 loops=1)
+                 Buffers: shared hit=863
+ Planning:
+   Buffers: shared hit=9
+ Planning Time: 1.421 ms
+ Execution Time: 15.806 ms
+(19 rows)
+
+WITHOUT_V4_HISTORY
+                                                                         QUERY PLAN                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1810.42..1810.48 rows=25 width=60) (actual time=4.426..4.429 rows=25 loops=1)
+   Buffers: shared hit=1070
+   ->  Sort  (cost=1810.42..1810.54 rows=50 width=60) (actual time=4.425..4.426 rows=25 loops=1)
+         Sort Key: t.started_at DESC, t.id
+         Sort Method: quicksort  Memory: 31kB
+         Buffers: shared hit=1070
+         ->  Nested Loop  (cost=0.58..1809.01 rows=50 width=60) (actual time=0.021..4.395 rows=50 loops=1)
+               Buffers: shared hit=1070
+               ->  Nested Loop  (cost=0.29..1790.50 rows=50 width=59) (actual time=0.016..4.261 rows=50 loops=1)
+                     Buffers: shared hit=920
+                     ->  Seq Scan on attempt t  (cost=0.00..1395.12 rows=50 width=59) (actual time=0.009..4.121 rows=50 loops=1)
+                           Filter: (student_id = '87267ff2-76a7-f62c-4599-08a6b7d7ffe6'::uuid)
+                           Rows Removed by Filter: 49960
+                           Buffers: shared hit=770
+                     ->  Index Scan using exam_session_pkey on exam_session s  (cost=0.29..7.91 rows=1 width=32) (actual time=0.002..0.002 rows=1 loops=50)
+                           Index Cond: (id = t.session_id)
+                           Buffers: shared hit=150
+               ->  Index Scan using assessment_pkey on assessment a  (cost=0.29..0.37 rows=1 width=33) (actual time=0.002..0.002 rows=1 loops=50)
+                     Index Cond: (id = s.assessment_id)
+                     Buffers: shared hit=150
+ Planning:
+   Buffers: shared hit=36
+ Planning Time: 1.109 ms
+ Execution Time: 4.468 ms
+(24 rows)
+
+ROLLBACK

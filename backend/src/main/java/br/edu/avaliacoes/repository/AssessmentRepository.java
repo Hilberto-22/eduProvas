@@ -1,5 +1,7 @@
 package br.edu.avaliacoes.repository;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -22,9 +24,10 @@ public class AssessmentRepository extends JdbcRepositorySupport {
         one("SELECT id FROM assessment WHERE id=? AND teacher_id=?", assessmentId, teacherId);
     }
 
-    public List<Map<String, Object>> findByTeacher(UUID teacherId) {
-        return rows("SELECT a.*,EXISTS(SELECT 1 FROM exam_session s WHERE s.assessment_id=a.id) AS locked " +
-                "FROM assessment a WHERE teacher_id=? ORDER BY title", teacherId);
+    public PageResponse<Map<String, Object>> findByTeacher(UUID teacherId, PageRequest page) {
+        return page("SELECT a.id,a.title,a.teacher_id,EXISTS(SELECT 1 FROM exam_session s WHERE s.assessment_id=a.id) AS locked " +
+                "FROM assessment a WHERE teacher_id=? ORDER BY title,a.id",
+                "SELECT count(*) FROM assessment WHERE teacher_id=?", page, teacherId);
     }
 
     public void create(UUID id, String title, UUID teacherId) {
@@ -32,11 +35,20 @@ public class AssessmentRepository extends JdbcRepositorySupport {
     }
 
     public List<Map<String, Object>> findQuestions(UUID assessmentId, boolean includeAnswerKey) {
-        var questions = rows("SELECT * FROM question WHERE assessment_id=? ORDER BY position", assessmentId);
+        var questions = rows("SELECT id,assessment_id,prompt,kind,points,position FROM question " +
+                "WHERE assessment_id=? ORDER BY position", assessmentId);
+        if (questions.isEmpty()) return questions;
+        String answerKeyColumn = includeAnswerKey ? ",alt.correct" : "";
+        var alternatives = rows("SELECT alt.id,alt.question_id,alt.label,alt.position" + answerKeyColumn +
+                " FROM alternative alt JOIN question q ON q.id=alt.question_id " +
+                "WHERE q.assessment_id=? ORDER BY alt.question_id,alt.position", assessmentId);
+        var grouped = new java.util.HashMap<Object, List<Map<String, Object>>>();
+        for (var alternative : alternatives) {
+            Object questionId = alternative.remove("question_id");
+            grouped.computeIfAbsent(questionId, ignored -> new java.util.ArrayList<>()).add(alternative);
+        }
         for (var question : questions) {
-            String answerKeyColumn = includeAnswerKey ? ",correct" : "";
-            question.put("alternatives", rows("SELECT id,label,position" + answerKeyColumn +
-                    " FROM alternative WHERE question_id=? ORDER BY position", question.get("id")));
+            question.put("alternatives", grouped.getOrDefault(question.get("id"), List.of()));
         }
         return questions;
     }
@@ -65,7 +77,7 @@ public class AssessmentRepository extends JdbcRepositorySupport {
     }
 
     public Map<String, Object> findQuestionInSession(UUID sessionId, UUID questionId) {
-        return one("SELECT q.* FROM question q JOIN exam_session s ON s.assessment_id=q.assessment_id " +
+        return one("SELECT q.id,q.assessment_id,q.prompt,q.kind,q.points,q.position FROM question q JOIN exam_session s ON s.assessment_id=q.assessment_id " +
                 "WHERE s.id=? AND q.id=?", sessionId, questionId);
     }
 

@@ -9,10 +9,16 @@ import br.edu.avaliacoes.service.AttemptService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import br.edu.avaliacoes.api.domain.dto.response.Responses;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,65 +33,102 @@ public class AttemptServiceImpl implements AttemptService {
     private final AssessmentRepository assessments;
     private final ExamSessionRepository sessions;
     private final LiveEvents liveEvents;
+    private final TransactionTemplate writes;
+    private final TransactionTemplate reads;
 
     public AttemptServiceImpl(AttemptRepository attempts, SchoolClassRepository classes,
                               AssessmentRepository assessments, ExamSessionRepository sessions,
-                              LiveEvents liveEvents) {
+                              LiveEvents liveEvents, PlatformTransactionManager transactionManager) {
         this.attempts = attempts;
         this.classes = classes;
         this.assessments = assessments;
         this.sessions = sessions;
         this.liveEvents = liveEvents;
+        this.writes = new TransactionTemplate(transactionManager);
+        this.reads = new TransactionTemplate(transactionManager);
+        this.reads.setReadOnly(true);
+        this.reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     }
 
     @Override
-    @Transactional
     public Map<String, Object> join(UUID studentId, String code) {
-        var session = sessions.findByCodeForUpdate(code.trim().toUpperCase(Locale.ROOT));
-        UUID sessionId = id(session, "id");
-        if (!classes.isEnrolled(id(session, "class_id"), studentId)) {
-            throw new ResponseStatusException(FORBIDDEN, "Você não está matriculado nesta turma");
-        }
-
-        var existing = attempts.find(sessionId, studentId);
-        if (existing.isPresent()) {
-            return read(id(existing.get(), "id"), studentId);
-        }
-
-        Instant now = attempts.currentTime();
-        if (!"PUBLICADA".equals(session.get("status")) ||
-                now.isBefore((Instant) session.get("starts_at")) ||
-                !now.isBefore((Instant) session.get("ends_at"))) {
-            throw new ResponseStatusException(CONFLICT, "Aplicação fora do período de realização");
-        }
-
-        UUID attemptId = UUID.randomUUID();
-        Instant deadline = calculateDeadline(now, session);
-        attempts.create(attemptId, sessionId, studentId, now, deadline);
-        liveEvents.changed(sessionId);
-        return snapshot(attempts.lock(attemptId), false);
+        UUID attemptId = writes.execute(transaction -> {
+            var session = sessions.findByCode(code.trim().toUpperCase(Locale.ROOT));
+            UUID sessionId = id(session, "id");
+            if (!classes.isEnrolled(id(session, "class_id"), studentId)) {
+                throw new ResponseStatusException(FORBIDDEN, "Você não está matriculado nesta turma");
+            }
+            var existing = attempts.find(sessionId, studentId);
+            if (existing.isPresent()) {
+                UUID existingId = id(existing.get(), "id");
+                ensureActiveOrFinish(attempts.lockOwned(existingId, studentId));
+                attempts.touch(existingId);
+                return existingId;
+            }
+            Instant now = attempts.currentTime();
+            if (!"PUBLICADA".equals(session.get("status")) ||
+                    now.isBefore((Instant) session.get("starts_at")) ||
+                    !now.isBefore((Instant) session.get("ends_at"))) {
+                throw new ResponseStatusException(CONFLICT, "Aplicação fora do período de realização");
+            }
+            UUID createdId = UUID.randomUUID();
+            // The unique constraint serializes only competing joins by this student/session.
+            if (attempts.create(createdId, sessionId, studentId, now, calculateDeadline(now, session))) {
+                liveEvents.changed(sessionId);
+                return createdId;
+            }
+            UUID concurrentId = id(attempts.find(sessionId, studentId).orElseThrow(), "id");
+            ensureActiveOrFinish(attempts.lockOwned(concurrentId, studentId));
+            attempts.touch(concurrentId);
+            return concurrentId;
+        });
+        return studentSnapshot(attemptId, studentId);
     }
 
     @Override
-    @Transactional
     public Map<String, Object> read(UUID attemptId, UUID studentId) {
-        var attempt = attempts.lock(attemptId);
-        requireOwner(attempt, studentId);
-        ensureActiveOrFinish(attempt);
-        attempts.touch(attemptId);
-        return snapshot(attempts.lock(attemptId), false);
+        writes.executeWithoutResult(transaction -> {
+            ensureActiveOrFinish(attempts.lockOwned(attemptId, studentId));
+            attempts.touch(attemptId);
+        });
+        return studentSnapshot(attemptId, studentId);
     }
 
     @Override
-    public List<Map<String, Object>> history(UUID studentId) {
-        return attempts.history(studentId);
+    public Responses.Status status(UUID attemptId, UUID studentId) {
+        return writes.execute(transaction -> {
+            var attempt = attempts.lockOwned(attemptId, studentId);
+            boolean active = ensureActiveOrFinish(attempt);
+            if (active) attempts.touch(attemptId);
+            return new Responses.Status(attemptId, (String) attempt.get("status"),
+                    (Instant) attempt.get("deadline"), attempts.currentTime(),
+                    (String) attempt.get("finish_reason"), attempts.countedViolations(attemptId));
+        });
+    }
+
+    @Override
+    public Responses.Id active(UUID studentId) {
+        return new Responses.Id(attempts.activeId(studentId).orElse(null));
+    }
+
+    private Map<String, Object> studentSnapshot(UUID attemptId, UUID studentId) {
+        // No row lock during the larger snapshot; all SELECTs see the same committed version.
+        return reads.execute(transaction -> {
+            var attempt = attempts.get(attemptId);
+            requireOwner(attempt, studentId);
+            return snapshot(attempt, false);
+        });
+    }
+
+    @Override
+    public PageResponse<Map<String, Object>> history(UUID studentId, PageRequest page) {
+        return attempts.history(studentId, page);
     }
 
     @Override
     @Transactional
     public Map<String, Object> save(UUID attemptId, UUID studentId, UUID questionId, SaveAnswerRequest input) {
-        var attempt = attempts.lock(attemptId);
-        requireOwner(attempt, studentId);
+        var attempt = attempts.lockOwned(attemptId, studentId);
         if (!ensureActiveOrFinish(attempt)) {
             return Map.of("accepted", false, "status", "FINALIZADA");
         }
@@ -101,8 +144,7 @@ public class AttemptServiceImpl implements AttemptService {
     @Override
     @Transactional
     public Map<String, Object> occurrence(UUID attemptId, UUID studentId, OccurrenceRequest input) {
-        var attempt = attempts.lock(attemptId);
-        requireOwner(attempt, studentId);
+        var attempt = attempts.lockOwned(attemptId, studentId);
         if (ensureActiveOrFinish(attempt)) {
             boolean counted = !attempts.hasRecentCountedOccurrence(attemptId);
             attempts.addOccurrence(input.id(), attemptId, input.kind(), counted);
@@ -110,36 +152,34 @@ public class AttemptServiceImpl implements AttemptService {
             liveEvents.changed(id(attempt, "session_id"));
         }
         return Map.of(
-                "status", attempts.lock(attemptId).get("status"),
+                "status", attempt.get("status"),
                 "violations", attempts.countedViolations(attemptId));
     }
 
     @Override
-    @Transactional
     public Map<String, Object> submit(UUID attemptId, UUID studentId) {
-        var attempt = attempts.lock(attemptId);
-        requireOwner(attempt, studentId);
-        if (ensureActiveOrFinish(attempt)) {
-            finish(attempt, "ENTREGA_ALUNO");
-        }
-        return snapshot(attempts.lock(attemptId), false);
+        writes.executeWithoutResult(transaction -> {
+            var attempt = attempts.lockOwned(attemptId, studentId);
+            if (ensureActiveOrFinish(attempt)) finish(attempt, "ENTREGA_ALUNO");
+        });
+        return studentSnapshot(attemptId, studentId);
     }
 
     @Override
-    @Transactional
     public Map<String, Object> review(UUID attemptId, UUID teacherId) {
-        var attempt = attempts.lock(attemptId);
-        sessions.requireOwned(id(attempt, "session_id"), teacherId);
-        ensureActiveOrFinish(attempt);
-        return snapshot(attempts.lock(attemptId), true);
+        writes.executeWithoutResult(transaction -> ensureActiveOrFinish(attempts.lockForTeacher(attemptId, teacherId)));
+        return reads.execute(transaction -> {
+            var attempt = attempts.get(attemptId);
+            sessions.requireOwned(id(attempt, "session_id"), teacherId);
+            return snapshot(attempt, true);
+        });
     }
 
     @Override
     @Transactional
     public void grade(UUID attemptId, UUID teacherId, UUID questionId, GradeAnswerRequest input) {
-        var attempt = attempts.lock(attemptId);
+        var attempt = attempts.lockForTeacher(attemptId, teacherId);
         UUID sessionId = id(attempt, "session_id");
-        sessions.requireOwned(sessionId, teacherId);
         if (!"FINALIZADA".equals(attempt.get("status"))) {
             throw new ResponseStatusException(CONFLICT, "Aguarde a finalização");
         }
@@ -156,10 +196,14 @@ public class AttemptServiceImpl implements AttemptService {
 
     @Override
     @Scheduled(fixedDelay = 5000)
-    @Transactional
     public void expire() {
-        for (var attempt : attempts.expiredActiveAttempts()) {
-            finish(attempt, "TEMPO_ESGOTADO");
+        for (int batch = 0; batch < 10; batch++) {
+            int processed = writes.execute(transaction -> {
+                var expired = attempts.expiredActiveAttempts();
+                for (var attempt : expired) finish(attempt, "TEMPO_ESGOTADO");
+                return expired.size();
+            });
+            if (processed < 100) break;
         }
     }
 
@@ -222,6 +266,7 @@ public class AttemptServiceImpl implements AttemptService {
         attempts.calculateAutomaticScores(attemptId);
         attempts.finish(attemptId, reason);
         attempt.put("status", "FINALIZADA");
+        attempt.put("finish_reason", reason);
         liveEvents.changed(sessionId);
     }
 

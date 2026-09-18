@@ -10,7 +10,7 @@ export class Api {
   onUnauthorized?: () => void;
   token = sessionStorage.getItem("token") || "";
   user: User | null = JSON.parse(sessionStorage.getItem("user") || "null");
-  async call(path: string, method = "GET", body?: unknown): Promise<any> {
+  async call<T = unknown>(path: string, method = "GET", body?: unknown): Promise<T> {
     const response = await fetch("/api" + path, {
       signal: AbortSignal.timeout(15000),
       method,
@@ -32,10 +32,10 @@ export class Api {
       );
     }
     const text = await response.text();
-    return text ? JSON.parse(text) : undefined;
+    return (text ? JSON.parse(text) : undefined) as T;
   }
   async login(email: string, password: string) {
-    const result = await this.call("/auth/login", "POST", { email, password });
+    const result = await this.call<{token: string; user: User}>("/auth/login", "POST", { email, password });
     this.token = result.token;
     this.user = result.user;
     sessionStorage.setItem("token", this.token);

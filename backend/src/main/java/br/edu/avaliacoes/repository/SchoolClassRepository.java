@@ -1,5 +1,7 @@
 package br.edu.avaliacoes.repository;
 
+import br.edu.avaliacoes.api.domain.dto.request.PageRequest;
+import br.edu.avaliacoes.api.domain.dto.response.PageResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -17,14 +19,16 @@ public class SchoolClassRepository extends JdbcRepositorySupport {
         one("SELECT id FROM school_class WHERE id=? AND teacher_id=?", classId, teacherId);
     }
 
-    public List<Map<String, Object>> findByTeacher(UUID teacherId) {
-        return rows("SELECT c.*, (SELECT count(*) FROM enrollment e WHERE e.class_id=c.id) AS students " +
-                "FROM school_class c WHERE teacher_id=? ORDER BY name", teacherId);
+    public PageResponse<Map<String, Object>> findByTeacher(UUID teacherId, PageRequest page) {
+        return page("SELECT c.id,c.name,c.teacher_id, (SELECT count(*) FROM enrollment e WHERE e.class_id=c.id) AS students " +
+                "FROM school_class c WHERE teacher_id=? ORDER BY name,c.id",
+                "SELECT count(*) FROM school_class WHERE teacher_id=?", page, teacherId);
     }
 
-    public List<Map<String, Object>> findStudents(UUID classId) {
-        return rows("SELECT u.id,u.name,u.email FROM enrollment e " +
-                "JOIN app_user u ON u.id=e.student_id WHERE e.class_id=? ORDER BY u.name", classId);
+    public PageResponse<Map<String, Object>> findStudents(UUID classId, PageRequest page) {
+        return page("SELECT u.id,u.name,u.email FROM enrollment e " +
+                "JOIN app_user u ON u.id=e.student_id WHERE e.class_id=? ORDER BY u.name,u.id",
+                "SELECT count(*) FROM enrollment WHERE class_id=?", page, classId);
     }
 
     public void create(UUID id, String name, UUID teacherId) {

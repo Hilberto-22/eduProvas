@@ -18,6 +18,8 @@ class FlowIntegrationTest {
     @Autowired TestRestTemplate http;
     @Autowired JdbcTemplate db;
     @Autowired AttemptService attempts;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    br.edu.avaliacoes.repository.AssessmentRepository assessmentRepository;
     @org.springframework.boot.test.web.server.LocalServerPort int port;
     @Autowired org.springframework.messaging.simp.user.SimpUserRegistry registry;
     String admin,teacher,student,otherStudent,otherTeacher;
@@ -116,6 +118,83 @@ class FlowIntegrationTest {
         assertThat(request(teacher,"PUT","/teacher/attempts/"+a.get("id")+"/grades/"+essayId,Map.of("score",4)).getStatusCode().value()).isEqualTo(400);
         assertThat(request(teacher,"PUT","/teacher/attempts/"+a.get("id")+"/grades/"+questionId,Map.of("score",1)).getStatusCode().value()).isEqualTo(400);
     }
+    @Test void paginationIsBoundedStableAndScopedToTheAuthenticatedOwner() {
+        for (int i=0;i<3;i++) ok(teacher,"POST","/teacher/classes",Map.of("name","Same name"));
+        Map first=ok(teacher,"GET","/teacher/classes?page=0&size=2",null);
+        Map second=ok(teacher,"GET","/teacher/classes?page=1&size=2",null);
+        assertThat(((Number)first.get("total")).intValue()).isEqualTo(4);
+        List<Map> firstItems=(List<Map>)first.get("items"), secondItems=(List<Map>)second.get("items");
+        assertThat(firstItems).hasSize(2);
+        assertThat(secondItems).hasSize(2);
+        assertThat(firstItems.stream().map(item->item.get("id")).toList())
+                .doesNotContainAnyElementsOf(secondItems.stream().map(item->item.get("id")).toList());
+        assertThat((List<?>)ok(otherTeacher,"GET","/teacher/classes",null).get("items")).isEmpty();
+        assertThat((List<?>)ok(teacher,"GET","/teacher/classes?page=99&size=2",null).get("items")).isEmpty();
+        assertThat(request(teacher,"GET","/teacher/classes?size=101",null).getStatusCode().value()).isEqualTo(400);
+        assertThat(request(teacher,"GET","/teacher/classes?page=-1",null).getStatusCode().value()).isEqualTo(400);
+        assertThat((List<?>)ok(teacher,"GET","/teacher/assessments",null).get("items")).hasSize(1);
+        assertThat((List<?>)ok(teacher,"GET","/teacher/classes/"+classId+"/students",null).get("items")).hasSize(1);
+        assertThat(ok(admin,"GET","/admin/users?size=1",null).toString()).doesNotContain("password_hash");
+        Map s=session("REGISTRAR",3);
+        Map before=ok(teacher,"GET","/teacher/sessions/"+s.get("id")+"/monitor",null);
+        assertThat(((List<Map>)before.get("items")).getFirst().get("id")).isNull();
+        Map a=join(s);
+        assertThat((List<?>)ok(teacher,"GET","/teacher/sessions",null).get("items")).hasSize(1);
+        assertThat(((List<Map>)ok(teacher,"GET","/teacher/sessions/"+s.get("id")+"/monitor",null).get("items"))
+                .getFirst().get("id")).isEqualTo(a.get("id"));
+        assertThat((List<?>)ok(student,"GET","/student/attempts",null).get("items")).hasSize(1);
+    }
+
+    @Test void lightweightStatusHidesContentAndEnforcesOwnershipAndDeadline() {
+        Map a=join(session("REGISTRAR",3)); String id=a.get("id").toString();
+        Map status=ok(student,"GET","/student/attempts/"+id+"/status",null);
+        assertThat(status.keySet()).containsExactlyInAnyOrder("id","status","deadline","server_now","finish_reason","violations");
+        assertThat(status.get("status")).isEqualTo("EM_ANDAMENTO");
+        assertThat(ok(student,"GET","/student/active-attempt",null).get("id")).isEqualTo(id);
+        assertThat(request(otherStudent,"GET","/student/attempts/"+id+"/status",null).getStatusCode().value()).isEqualTo(404);
+        db.update("UPDATE attempt SET deadline=clock_timestamp()-interval '1 second' WHERE id=?",uuid(a));
+        status=ok(student,"GET","/student/attempts/"+id+"/status",null);
+        assertThat(status.get("status")).isEqualTo("FINALIZADA");
+        assertThat(status.get("finish_reason")).isEqualTo("TEMPO_ESGOTADO");
+        assertThat(ok(student,"GET","/student/active-attempt",null).get("id")).isNull();
+        assertThat(ok(student,"GET","/student/attempts/"+id,null)).containsKeys("questions","answers","score");
+    }
+
+    @Test void concurrentJoinsReturnOneAttempt() throws Exception {
+        Map s=session("REGISTRAR",3);
+        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(6)) {
+            var gate=new java.util.concurrent.CountDownLatch(1);
+            List<java.util.concurrent.Future<Map>> futures=new ArrayList<>();
+            for(int i=0;i<6;i++) futures.add(pool.submit(()->{gate.await();return join(s);}));
+            gate.countDown();
+            Set<Object> ids=new HashSet<>();
+            for(var future:futures) ids.add(future.get(10,java.util.concurrent.TimeUnit.SECONDS).get("id"));
+            assertThat(ids).hasSize(1);
+            assertThat(db.queryForObject("SELECT count(*) FROM attempt WHERE session_id=?",Integer.class,uuid(s))).isEqualTo(1);
+        }
+    }
+
+    @Test void loadingSnapshotDoesNotHoldTheAttemptWriteLock() throws Exception {
+        Map a=join(session("REGISTRAR",3));String id=a.get("id").toString();
+        var reading=new java.util.concurrent.CountDownLatch(1);
+        var release=new java.util.concurrent.CountDownLatch(1);
+        org.mockito.Mockito.doAnswer(invocation->{
+            reading.countDown();
+            if(!release.await(10,java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("Snapshot timed out");
+            return invocation.callRealMethod();
+        }).when(assessmentRepository).findQuestions(assessmentId,false);
+        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var read=pool.submit(()->ok(student,"GET","/student/attempts/"+id,null));
+            try {
+                assertThat(reading.await(5,java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+                var save=pool.submit(()->ok(student,"PUT","/student/attempts/"+id+"/answers/"+essayId,Map.of("text","During snapshot")));
+                assertThat(save.get(5,java.util.concurrent.TimeUnit.SECONDS).get("accepted")).isEqualTo(true);
+            } finally { release.countDown(); }
+            // Repeatable-read snapshot is internally consistent and predates the concurrent save.
+            assertThat((List<?>)read.get(5,java.util.concurrent.TimeUnit.SECONDS).get("answers")).isEmpty();
+        } finally { release.countDown();org.mockito.Mockito.reset(assessmentRepository); }
+    }
+
     @Test void websocketDeliversPrivateUpdatesAndRejectsForeignSubscriptions() throws Exception {
         Map s=session("REGISTRAR",3),a=join(s);
         var client=new org.springframework.web.socket.messaging.WebSocketStompClient(new org.springframework.web.socket.client.standard.StandardWebSocketClient());
