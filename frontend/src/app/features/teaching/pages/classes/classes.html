@@ -1,0 +1,59 @@
+<section>
+  <form class="card inline" (ngSubmit)="createClass()">
+    <label
+      >Nome da turma<input
+        name="className"
+        [(ngModel)]="store.className"
+        placeholder="Ex.: 2º ano • Turma A"
+        required
+        maxlength="120" /></label
+    ><button class="primary" [disabled]="action.busy()">Criar turma</button>
+  </form>
+  <div class="card">
+    <label
+      >Selecione uma turma<select
+        [(ngModel)]="store.classId"
+        (ngModelChange)="selectClass()"
+      >
+        <option value>Selecione…</option>
+        <option *ngFor="let c of store.classOptions()" [value]="c.id">
+          {{c.name}} ({{c.students}} alunos)
+        </option>
+      </select></label
+    ><app-pagination
+      [page]="store.classes.data()"
+      [busy]="action.busy()"
+      (change)="changePage('classes',$event)"
+    />
+    <ng-container *ngIf="store.classId"
+      ><h2>Alunos matriculados</h2>
+      <p *ngIf="!store.students.items().length">Nenhum aluno matriculado.</p>
+      <div class="list-row" *ngFor="let s of store.students.items()">
+        <div>
+          <strong>{{s.name}}</strong><small>{{s.email}}</small
+          ><small>ID: {{s.id}}</small>
+        </div>
+      </div>
+      <app-pagination
+        [page]="store.students.data()"
+        [busy]="action.busy()"
+        (change)="changePage('students',$event)"
+      />
+      <h3>Cadastrar e matricular aluno</h3>
+      <app-user-form
+        [(value)]="store.newUser"
+        [busy]="action.busy()"
+        (submitted)="createStudent($event)"
+      />
+      <form class="inline" (ngSubmit)="enroll()">
+        <label
+          >ID de um aluno já cadastrado<input
+            name="enrollment"
+            [(ngModel)]="store.enrollmentId"
+            required
+            placeholder="UUID do cadastro" /></label
+        ><button [disabled]="action.busy()">Matricular</button>
+      </form></ng-container
+    >
+  </div>
+</section>

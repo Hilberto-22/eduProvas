@@ -1,0 +1,36 @@
+<form (ngSubmit)="submitted.emit(value())">
+  <div class="grid2">
+    <label
+      >Nome<input
+        name="name"
+        [(ngModel)]="value().name"
+        required
+        maxlength="120" /></label
+    ><label
+      >E-mail<input
+        name="email"
+        type="email"
+        [(ngModel)]="value().email"
+        required
+        maxlength="254" /></label
+    ><label
+      >Senha inicial (12 a 72 caracteres)<input
+        name="password"
+        type="password"
+        [(ngModel)]="value().password"
+        required
+        minlength="12"
+        maxlength="72"
+        autocomplete="new-password" /></label
+    ><label *ngIf="admin()"
+      >Perfil<select name="role" [(ngModel)]="value().role">
+        <option>ALUNO</option>
+        <option>PROFESSOR</option>
+        <option>ADMIN</option>
+      </select></label
+    >
+  </div>
+  <button class="primary" [disabled]="busy()">
+    Cadastrar {{admin()?'usuário':'aluno'}}
+  </button>
+</form>

@@ -1,0 +1,50 @@
+<div *ngIf="store.review()" class="card">
+  <div class="list-row">
+    <h2>Respostas e correção</h2>
+    <button (click)="store.close()">Fechar</button>
+  </div>
+  <p>
+    {{store.review()!.status}} · Nota: {{store.review()!.score.total}} /
+    {{store.review()!.max_score}} · {{store.review()!.score.pending}}
+    pendente(s)
+  </p>
+  <article class="question-preview" *ngFor="let q of store.review()!.questions">
+    <h3>{{q.position}}. {{q.prompt}}</h3>
+    <p *ngIf="q.kind==='DISCURSIVA'" class="pre">
+      {{store.reviewAnswer(q.id)?.text_value||'Sem resposta'}}
+    </p>
+    <p *ngFor="let alt of q.alternatives">
+      {{store.reviewAnswer(q.id)?.alternative_id===alt.id?'●':'○'}}
+      {{alt.label}} {{alt.correct?'✓ Gabarito':''}}
+    </p>
+    <form
+      *ngIf="q.kind==='DISCURSIVA' && store.review()!.status==='FINALIZADA'"
+      (ngSubmit)="grade(q.id)"
+    >
+      <div class="grid2">
+        <label
+          >Nota (0 a {{q.points}})<input
+            type="number"
+            [name]="'score'+q.id"
+            [(ngModel)]="store.grades[q.id].score"
+            min="0"
+            [max]="q.points"
+            step=".01"
+            required /></label
+        ><label
+          >Comentário<input
+            [name]="'feedback'+q.id"
+            [(ngModel)]="store.grades[q.id].feedback"
+            maxlength="5000"
+        /></label>
+      </div>
+      <button [disabled]="action.busy()">Salvar correção</button>
+    </form>
+  </article>
+  <h3>Ocorrências</h3>
+  <p *ngIf="!store.review()!.occurrences.length">Nenhuma ocorrência.</p>
+  <p *ngFor="let o of store.review()!.occurrences">
+    {{o.created_at | date:'dd/MM HH:mm:ss'}} · {{o.kind}} {{o.counted?'':'(mesmo
+    episódio)'}}
+  </p>
+</div>

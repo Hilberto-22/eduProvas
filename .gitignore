@@ -5,6 +5,8 @@ backend/.idea/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+frontend/test-results/
+frontend/playwright-report/
 work/
 outputs/
 *.log

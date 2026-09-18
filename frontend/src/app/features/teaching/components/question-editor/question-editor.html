@@ -1,0 +1,64 @@
+<form (ngSubmit)="addQuestion()">
+  <h3>Adicionar questão</h3>
+  <div class="grid2">
+    <label
+      >Tipo<select name="kind" [(ngModel)]="store.question.kind">
+        <option>OBJETIVA</option>
+        <option>DISCURSIVA</option>
+      </select></label
+    ><label
+      >Pontuação<input
+        type="number"
+        name="points"
+        [(ngModel)]="store.question.points"
+        min="0.01"
+        max="1000"
+        step=".01"
+        required
+    /></label>
+  </div>
+  <label
+    >Enunciado<textarea
+      name="prompt"
+      [(ngModel)]="store.question.prompt"
+      required
+      maxlength="10000"
+    ></textarea>
+  </label>
+  <fieldset *ngIf="store.question.kind==='OBJETIVA'">
+    <legend>Alternativas — informe de 2 a 5 e marque o gabarito</legend>
+    <div
+      class="alternative-editor"
+      *ngFor="let option of store.options;let i=index;trackBy:trackIndex"
+    >
+      <input
+        type="radio"
+        name="correct"
+        [value]="i"
+        [(ngModel)]="store.correct"
+        [attr.aria-label]="'Gabarito alternativa '+(i+1)"
+      /><input
+        [name]="'option'+i"
+        [(ngModel)]="store.options[i]"
+        required
+        maxlength="2000"
+        [attr.aria-label]="'Texto alternativa '+(i+1)"
+      /><button
+        type="button"
+        *ngIf="store.options.length>2"
+        (click)="removeOption(i)"
+        [attr.aria-label]="'Remover alternativa '+(i+1)"
+      >
+        Remover
+      </button>
+    </div>
+    <button
+      type="button"
+      (click)="addOption()"
+      [disabled]="store.options.length>=5"
+    >
+      Adicionar alternativa ({{store.options.length}}/5)
+    </button>
+  </fieldset>
+  <button class="primary" [disabled]="action.busy()">Adicionar questão</button>
+</form>

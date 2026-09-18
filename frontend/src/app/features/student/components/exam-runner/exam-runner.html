@@ -1,0 +1,74 @@
+@if (state.attempt(); as attempt) {
+<div class="exam-status">
+  <span>{{state.answered()}} / {{attempt.questions.length}} respondidas</span
+  ><span aria-live="polite">{{state.saveState()}}</span
+  ><span
+    >{{attempt.violations}} / {{attempt.session.max_violations}}
+    ocorrências</span
+  >
+</div>
+<div class="notice">
+  Política desta prova:
+  {{attempt.session.violation_action==='FINALIZAR'?'finalização automática ao
+  atingir o limite de ocorrências.':'ocorrências registradas para análise do
+  professor.'}}
+</div>
+<section class="card fullscreen-gate" *ngIf="!state.fullscreen()">
+  <h2>Retome o modo prova</h2>
+  <p>Entre em tela cheia para continuar. O cronômetro permanece ativo.</p>
+  <button class="primary" (click)="enterFullscreen()">
+    Voltar à tela cheia
+  </button>
+</section>
+<ng-container *ngIf="state.fullscreen()"
+  ><article class="card exam-question" *ngFor="let q of attempt.questions">
+    <p class="eyebrow">QUESTÃO {{q.position}} · {{q.points}} PONTO(S)</p>
+    <h2 class="pre">{{q.prompt}}</h2>
+    <ng-container *ngIf="q.kind==='OBJETIVA'"
+      ><label
+        class="choice"
+        *ngFor="let alt of q.alternatives"
+        [class.chosen]="state.answers()[q.id]?.alternativeId===alt.id"
+        ><input
+          type="radio"
+          [name]="q.id"
+          [value]="alt.id"
+          [ngModel]="state.answers()[q.id]?.alternativeId"
+          (ngModelChange)="state.change(q,$event)"
+        /><span>{{alt.label}}</span></label
+      ></ng-container
+    ><label *ngIf="q.kind==='DISCURSIVA'"
+      >Sua resposta<textarea
+        [ngModel]="state.answers()[q.id]?.text||''"
+        (ngModelChange)="state.change(q,$event)"
+        maxlength="20000"
+        rows="6"
+      ></textarea>
+    </label>
+  </article>
+  <div class="card" *ngIf="state.confirmSubmit()">
+    <h2>Entregar a avaliação?</h2>
+    <p>
+      {{state.answered()}} de {{attempt.questions.length}} questões respondidas.
+      Após a entrega, as respostas não poderão ser alteradas.
+    </p>
+    <button
+      class="primary"
+      (click)="submit()"
+      [disabled]="action.busy()||sync.flushing()"
+    >
+      Confirmar entrega
+    </button>
+    <button (click)="state.confirmSubmit.set(false)">
+      Continuar respondendo
+    </button>
+  </div>
+  <button
+    *ngIf="!state.confirmSubmit()"
+    class="primary"
+    (click)="state.confirmSubmit.set(true)"
+  >
+    Finalizar avaliação →
+  </button></ng-container
+>
+}

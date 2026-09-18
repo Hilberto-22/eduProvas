@@ -1,0 +1,60 @@
+<section>
+  <div class="card">
+    <label
+      >Aplicação<select
+        [(ngModel)]="store.monitorId"
+        (ngModelChange)="selectMonitor()"
+      >
+        <option value>Selecione…</option>
+        <option *ngFor="let s of sessions.sessionOptions()" [value]="s.id">
+          {{s.title}} • {{s.class_name}}
+        </option>
+      </select></label
+    ><app-pagination
+      [page]="sessions.sessions.data()"
+      [busy]="action.busy()"
+      (change)="changePage('sessions',$event)"
+    />
+    <p class="muted">
+      Atualização ao vivo, com consulta de segurança a cada 15 segundos. Eventos
+      próximos são agrupados em um episódio de 2 segundos.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aluno</th>
+            <th>Estado</th>
+            <th>Respostas</th>
+            <th>Eventos</th>
+            <th>Último contato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of store.roster.items()">
+            <td>{{r.name}}</td>
+            <td>
+              <span class="badge">{{r.status||'NÃO INICIOU'}}</span
+              ><small>{{r.finish_reason}}</small>
+            </td>
+            <td>{{r.answered}}</td>
+            <td>{{r.violations}}</td>
+            <td>{{r.last_seen | date:'HH:mm:ss'}}</td>
+            <td>
+              <button *ngIf="r.id" (click)="openReview(r.id)">
+                Ver / corrigir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="store.roster.data()"
+      [busy]="action.busy()"
+      (change)="changePage('roster',$event)"
+    />
+  </div>
+  <app-attempt-review />
+</section>

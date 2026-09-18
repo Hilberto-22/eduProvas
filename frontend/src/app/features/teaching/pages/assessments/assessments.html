@@ -1,0 +1,44 @@
+<section>
+  <form class="card inline" (ngSubmit)="createAssessment()">
+    <label
+      >Título da avaliação<input
+        name="title"
+        [(ngModel)]="store.title"
+        required
+        maxlength="200"
+        placeholder="Ex.: Matemática • Funções" /></label
+    ><button class="primary" [disabled]="action.busy()">Criar avaliação</button>
+  </form>
+  <div class="card">
+    <label
+      >Avaliação<select
+        [(ngModel)]="store.assessmentId"
+        (ngModelChange)="selectAssessment()"
+      >
+        <option value>Selecione…</option>
+        <option *ngFor="let a of store.assessmentOptions()" [value]="a.id">
+          {{a.title}}
+        </option>
+      </select></label
+    ><app-pagination
+      [page]="store.assessments.data()"
+      [busy]="action.busy()"
+      (change)="changePage('assessments',$event)"
+    />
+    <ng-container *ngIf="store.selectedAssessment()"
+      ><p class="notice" *ngIf="store.selectedAssessment()!.locked">
+        Questões congeladas: esta avaliação já possui uma aplicação.
+      </p>
+      <article class="question-preview" *ngFor="let q of store.questions()">
+        <span class="eyebrow"
+          >QUESTÃO {{q.position}} · {{q.points}} PONTO(S) · {{q.kind}}</span
+        >
+        <p class="pre">{{q.prompt}}</p>
+        <p *ngFor="let alt of q.alternatives">
+          {{alt.correct?'✓':'○'}} {{alt.label}}
+        </p>
+      </article>
+      <app-question-editor *ngIf="!store.selectedAssessment()!.locked"
+    /></ng-container>
+  </div>
+</section>

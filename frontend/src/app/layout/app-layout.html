@@ -1,0 +1,64 @@
+@if (auth.user(); as user) {
+<div class="app-shell">
+  @if (!active()) {
+  <aside>
+    <div class="brand">a<span>•</span> Avalia</div>
+    <p class="eyebrow">ESPAÇO {{user.role}}</p>
+    @if (user.role !== 'ALUNO') {
+    <nav>
+      <button routerLink="/overview" routerLinkActive="selected">
+        Visão geral
+      </button>
+      <button routerLink="/classes" routerLinkActive="selected">
+        Turmas e alunos
+      </button>
+      <button routerLink="/assessments" routerLinkActive="selected">
+        Avaliações
+      </button>
+      <button routerLink="/sessions" routerLinkActive="selected">
+        Aplicações
+      </button>
+      <button routerLink="/monitor" routerLinkActive="selected">
+        Acompanhamento
+      </button>
+      @if (user.role === 'ADMIN') {
+      <button routerLink="/users" routerLinkActive="selected">Usuários</button>
+      }
+    </nav>
+    }
+    <p class="sidebar-note">
+      Um espaço para avaliar<br />e acompanhar a aprendizagem.
+    </p>
+    <div class="profile">
+      <strong>{{user.name}}</strong><small>{{user.role}}</small
+      ><button (click)="logout()">Sair da conta</button>
+    </div>
+  </aside>
+  }
+  <main [class.exam-main]="active()">
+    <header>
+      <div>
+        <p class="eyebrow">
+          {{active() ? 'MODO PROVA' : 'PLATAFORMA DE AVALIAÇÕES'}}
+        </p>
+        <h1>{{title()}}</h1>
+      </div>
+      @if (user.role !== 'ALUNO') {
+      <span class="badge">{{live() ? '● Ao vivo' : '○ Reconectando'}}</span> }
+      @if (active()) {
+      <div class="timer">{{timer()}}<small>tempo restante</small></div>
+      }
+    </header>
+    @if (feedback.error()) {
+    <p class="error" role="alert">
+      {{feedback.error()}}
+      <button (click)="feedback.error.set('')">Fechar</button>
+    </p>
+    } @if (feedback.notice()) {
+    <p class="notice" role="status">{{feedback.notice()}}</p>
+    }
+    <ng-content />
+    <footer>Avalia · Ambiente de avaliações escolares</footer>
+  </main>
+</div>
+}

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 const vm = require('node:vm');
-const source = ts.transpileModule(fs.readFileSync('src/monitor-refresh.ts','utf8'), {
+const source = ts.transpileModule(fs.readFileSync('src/app/features/teaching/services/monitor-refresh.ts','utf8'), {
   compilerOptions: {module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}
 }).outputText;
 const context = {exports:{},setTimeout,clearTimeout};

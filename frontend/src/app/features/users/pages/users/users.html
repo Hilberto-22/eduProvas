@@ -1,0 +1,22 @@
+<section class="card">
+  <h2>Cadastrar usuário</h2>
+  <app-user-form
+    [admin]="true"
+    [(value)]="store.newUser"
+    [busy]="action.busy()"
+    (submitted)="createUser($event)"
+  />
+  <h3>Usuários cadastrados</h3>
+  <article class="list-row" *ngFor="let u of store.users.items()">
+    <div>
+      <strong>{{u.name}}</strong><small>{{u.email}}</small
+      ><small>ID: {{u.id}}</small>
+    </div>
+    <span class="badge">{{u.role}}</span>
+  </article>
+  <app-pagination
+    [page]="store.users.data()"
+    [busy]="action.busy()"
+    (change)="changePage('users',$event)"
+  />
+</section>

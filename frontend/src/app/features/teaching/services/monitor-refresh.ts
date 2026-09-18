@@ -5,7 +5,10 @@ export class MonitorRefresh {
   private pending = false;
   private stopped = false;
 
-  constructor(private readonly refresh: () => Promise<void>, private readonly delay = 500) {}
+  constructor(
+    private readonly refresh: () => Promise<void>,
+    private readonly delay = 500,
+  ) {}
 
   schedule() {
     if (this.stopped) return;
@@ -19,12 +22,19 @@ export class MonitorRefresh {
 
   async flush(): Promise<void> {
     if (this.stopped) return;
-    if (this.timer) { clearTimeout(this.timer); this.timer = undefined; }
-    if (this.running) { this.pending = true; return this.running; }
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+    if (this.running) {
+      this.pending = true;
+      return this.running;
+    }
     this.pending = false;
     this.running = this.refresh();
-    try { await this.running; }
-    finally {
+    try {
+      await this.running;
+    } finally {
       this.running = undefined;
       if (this.pending) this.schedule();
     }

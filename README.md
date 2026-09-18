@@ -64,6 +64,11 @@ npm start
 
 Abra http://localhost:4200. O servidor Angular encaminha `/api` e `/ws` para o backend. Não é necessário CORS aberto. Datas são enviadas em UTC e exibidas no fuso do navegador.
 
+A raiz redireciona para login ou para a área do perfil autenticado. O frontend
+usa componentes standalone, rotas lazy e organização por domínio em
+`frontend/src/app`. O diagnóstico, a estrutura e os testes de navegador estão em
+[arquitetura do frontend](docs/frontend-architecture.md).
+
 ## Testes e compilação
 
 ```sh

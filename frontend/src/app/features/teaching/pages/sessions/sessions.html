@@ -1,0 +1,116 @@
+<section>
+  <form class="card" (ngSubmit)="createSession()">
+    <h2>Nova aplicação</h2>
+    <div class="grid2">
+      <label
+        >Avaliação<select
+          name="assessment"
+          [ngModel]="store.form.assessmentId"
+          (ngModelChange)="store.selectAssessment($event)"
+          required
+        >
+          <option value>Selecione…</option>
+          <option
+            *ngFor="let a of assessments.assessmentOptions()"
+            [value]="a.id"
+          >
+            {{a.title}}
+          </option>
+        </select></label
+      ><app-pagination
+        [page]="assessments.assessments.data()"
+        [busy]="action.busy()"
+        (change)="changePage('assessments',$event)"
+      /><label
+        >Turma<select
+          name="class"
+          [ngModel]="store.form.classId"
+          (ngModelChange)="store.selectClass($event)"
+          required
+        >
+          <option value>Selecione…</option>
+          <option *ngFor="let c of classes.classOptions()" [value]="c.id">
+            {{c.name}}
+          </option>
+        </select></label
+      ><app-pagination
+        [page]="classes.classes.data()"
+        [busy]="action.busy()"
+        (change)="changePage('classes',$event)"
+      />
+      <label
+        >Início (seu horário local)<input
+          type="datetime-local"
+          name="start"
+          [(ngModel)]="store.form.startsAt"
+          required /></label
+      ><label
+        >Fim (seu horário local)<input
+          type="datetime-local"
+          name="end"
+          [(ngModel)]="store.form.endsAt"
+          required
+      /></label>
+      <label
+        >Duração em minutos<input
+          type="number"
+          name="duration"
+          [(ngModel)]="store.form.durationMinutes"
+          min="1"
+          max="480"
+          required /></label
+      ><label
+        >Limite de ocorrências<input
+          type="number"
+          name="violations"
+          [(ngModel)]="store.form.maxViolations"
+          min="1"
+          max="100"
+          required
+      /></label>
+      <label
+        >Ao atingir o limite<select
+          name="action"
+          [(ngModel)]="store.form.violationAction"
+        >
+          <option value="REGISTRAR">Apenas registrar</option>
+          <option value="FINALIZAR">Finalizar automaticamente</option>
+        </select></label
+      >
+    </div>
+    <p class="muted">
+      A duração começa na entrada do aluno e nunca ultrapassa o fim da
+      aplicação. Criar a aplicação congela suas questões.
+    </p>
+    <button class="primary" [disabled]="action.busy()">Criar aplicação</button>
+  </form>
+  <article class="card" *ngFor="let s of store.sessions.items()">
+    <div class="list-row">
+      <div>
+        <h3>{{s.title}}</h3>
+        <p>{{s.class_name}} · {{s.duration_minutes}} min</p>
+      </div>
+      <span class="badge">{{s.status}}</span>
+    </div>
+    <p>
+      {{s.starts_at | date:'dd/MM/yyyy HH:mm'}} até {{s.ends_at |
+      date:'dd/MM/yyyy HH:mm'}}
+    </p>
+    <p>Código de acesso: <strong class="access-code">{{s.code}}</strong></p>
+    <p class="muted">Limite: {{s.max_violations}} · {{s.violation_action}}</p>
+    <button
+      class="primary"
+      *ngIf="s.status==='RASCUNHO'"
+      (click)="publish(s.id)"
+      [disabled]="action.busy()"
+    >
+      Publicar aplicação
+    </button>
+    <button (click)="monitor(s.id)">Acompanhar</button>
+  </article>
+  <app-pagination
+    [page]="store.sessions.data()"
+    [busy]="action.busy()"
+    (change)="changePage('sessions',$event)"
+  />
+</section>

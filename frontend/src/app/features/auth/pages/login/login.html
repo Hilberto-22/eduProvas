@@ -1,0 +1,37 @@
+<div class="login-shell">
+  <section class="login-intro">
+    <div class="brand">a<span>•</span> Avalia</div>
+    <p class="eyebrow">AVALIAÇÕES ESCOLARES</p>
+    <h1>Mais atenção<br />ao que importa:<br /><em>aprender.</em></h1>
+    <p>Da primeira questão ao resultado, sua escola em um só lugar.</p>
+    <div class="intro-note">Crie · Aplique · Acompanhe</div>
+  </section>
+  <section class="login-form">
+    <form (ngSubmit)="login()">
+      <p class="eyebrow">BEM-VINDO</p>
+      <h2>Entre na sua escola</h2>
+      <p>Use as credenciais fornecidas pela administração.</p>
+      <label
+        >E-mail<input
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          required
+          autocomplete="username" /></label
+      ><label
+        >Senha<input
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          required
+          autocomplete="current-password"
+      /></label>
+      <p class="error" role="alert" *ngIf="feedback.error()">
+        {{feedback.error()}}
+      </p>
+      <button class="primary wide" [disabled]="action.busy()">
+        Entrar {{action.busy()?'…':'→'}}
+      </button>
+    </form>
+  </section>
+</div>

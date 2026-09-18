@@ -1,0 +1,23 @@
+<section class="card">
+  <p class="eyebrow">AVALIAÇÃO ENTREGUE</p>
+  <h2>{{attempt().session.title}}</h2>
+  <p>Encerramento: {{attempt().finish_reason}}</p>
+  <div class="result-score">
+    {{attempt().score.total}} <span>/ {{attempt().max_score}}</span>
+  </div>
+  <p>
+    {{attempt().score.pending>0?'Nota parcial — aguardando correção de
+    '+attempt().score.pending+' questão(ões).':'Correção concluída.'}}
+  </p>
+  <article
+    class="question-preview"
+    *ngFor="let a of attempt().answers;let i=index"
+  >
+    <h3>Questão {{i+1}}</h3>
+    <p>{{a.text_value}}</p>
+    <p>Nota: {{a.score===null?'Aguardando correção':a.score}}</p>
+    <p *ngIf="a.feedback">{{a.feedback}}</p>
+  </article>
+  <button (click)="refresh.emit()">Atualizar resultado</button>
+  <button class="primary" (click)="back.emit()">Voltar</button>
+</section>

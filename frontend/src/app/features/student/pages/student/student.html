@@ -1,0 +1,56 @@
+<app-layout
+  [title]="state.active() ? state.attempt()!.session.title : 'Minhas avaliações'"
+  [active]="state.active()"
+  [timer]="state.timer()"
+>
+  @if (!state.attempt()) {
+  <ng-container
+    ><form class="card join-card" (ngSubmit)="join()">
+      <p class="eyebrow">PRONTO PARA COMEÇAR?</p>
+      <h2>Entre na avaliação</h2>
+      <label
+        >Código da aplicação<input
+          class="code-input"
+          name="code"
+          [(ngModel)]="code"
+          required
+          maxlength="16"
+          placeholder="Código do professor"
+      /></label>
+      <p>
+        Ao entrar, o cronômetro começa e a tela cheia é solicitada. Perda de
+        foco, aba oculta e saída da tela cheia geram ocorrências. O navegador
+        não impede o acesso a outros programas.
+      </p>
+      <p>
+        Use um computador com suporte a tela cheia. Em caso de desconexão, o
+        prazo continua correndo. Alterações pendentes ficam nesta aba e precisam
+        chegar ao servidor antes do prazo.
+      </p>
+      <button class="primary" [disabled]="action.busy()">
+        Entrar em tela cheia e iniciar →
+      </button>
+    </form>
+    <h2>Minhas tentativas</h2>
+    <p class="card" *ngIf="!sync.history.items().length">
+      Suas avaliações aparecerão aqui.
+    </p>
+    <article class="list-row" *ngFor="let h of sync.history.items()">
+      <div><strong>{{h.title}}</strong><small>{{h.status}}</small></div>
+      <button (click)="openAttempt(h.id)">Abrir</button>
+    </article>
+    <app-pagination
+      [page]="sync.history.data()"
+      [busy]="action.busy()"
+      (change)="changePage($event)"
+  /></ng-container>
+
+  } @if (state.active()) { <app-exam-runner /> } @if (state.attempt(); as
+  attempt) { @if (!state.active()) {
+  <app-attempt-result
+    [attempt]="attempt"
+    (refresh)="openAttempt(attempt.id)"
+    (back)="backToHistory()"
+  />
+  } }
+</app-layout>
